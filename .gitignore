@@ -1,0 +1,66 @@
+# ============
+# 数据库文件
+# ============
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+*.sql
+dump.sql
+database/
+
+# ============
+# 媒体文件
+# ============
+*.mp4
+*.avi
+*.mov
+*.mp3
+*.wav
+*.psd
+uploads/
+
+# ============
+# 配置文件（含敏感信息）
+# ============
+.env
+.env.local
+.env.development
+.env.production
+secrets.json
+credentials.json
+*.key
+*.pem
+
+# ============
+# 编译/构建文件
+# ============
+__pycache__/
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+
+# ============
+# 编辑器/IDE 文件
+# ============
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ============
+# 系统文件
+# ============
+.DS_Store
+Thumbs.db
+
+# ============
+# 项目特定文件
+# ============
+/logs
+*.log
+/cache
