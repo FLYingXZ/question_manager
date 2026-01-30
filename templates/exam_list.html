@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>试卷列表</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/5.2.3/bootstrap.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/font-awesome.min.css') }}">
+    <script src="{{ url_for('static', filename='jquery/jquery-3.6.0.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='css/free-v4-shims.min.css') }}"></script>
+    <script src="{{ url_for('static', filename='css/free-v5-font-face.min.css') }}"></script>
+    <script src="{{ url_for('static', filename='css/free-v4-font-face.min.css') }}"></script>
+    
+    <style>
+        /* 全局样式 - 冷色调简约风格 */
+        body {
+            background-color: #f5f7fa;
+            min-height: 100vh;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            color: #2c3e50;
+        }
+        
+        /* 主容器样式 */
+        .main-container {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+            margin: 30px auto;
+            max-width: 1400px;
+            overflow: hidden;
+        }
+        
+        /* 页面标题样式 */
+        .page-header {
+            background: #34495e;
+            color: white;
+            padding: 25px 30px;
+            border-bottom: 1px solid #e1e8ed;
+        }
+        
+        .page-header h1 {
+            margin: 0;
+            font-size: 1.8rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+        }
+        
+        .page-header h1 i {
+            margin-right: 12px;
+            color: #3498db;
+        }
+        
+        .page-header .subtitle {
+            margin-top: 8px;
+            font-size: 0.95rem;
+            opacity: 0.8;
+            font-weight: 400;
+        }
+        
+        /* 提示信息样式 */
+        .alert-banner {
+            background: #ecf0f1;
+            color: #34495e;
+            padding: 15px 30px;
+            margin: 20px;
+            border-left: 4px solid #3498db;
+            font-weight: 500;
+            border-radius: 4px;
+        }
+        
+        .alert-banner i {
+            margin-right: 8px;
+            color: #3498db;
+        }
+        
+        /* 表格容器样式 */
+        .table-container {
+            padding: 30px;
+        }
+        
+        /* 表格样式 */
+        .exam-table {
+            border-collapse: separate;
+            border-spacing: 0;
+            width: 100%;
+        }
+        
+        .exam-table thead {
+            background: #f8f9fa;
+        }
+        
+        .exam-table th {
+            font-weight: 600;
+            color: #34495e;
+            padding: 15px;
+            text-align: left;
+            border-bottom: 2px solid #e1e8ed;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .exam-table td {
+            padding: 20px 15px;
+            vertical-align: middle;
+            border-bottom: 1px solid #f1f3f4;
+            color: #2c3e50;
+        }
+        
+        .exam-table tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+        
+        /* 试卷标题样式 */
+        .exam-title {
+            font-weight: 600;
+            font-size: 1.4rem;
+            color: #2c3e50;
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            line-height: 1.3;
+        }
+        
+        .exam-title i {
+            margin-right: 12px;
+            color: #3498db;
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+        
+        .exam-title a {
+            text-decoration: none;
+            color: inherit;
+            transition: color 0.2s ease;
+            word-break: break-word;
+        }
+        
+        .exam-title a:hover {
+            color: #3498db;
+        }
+        
+        /* 试卷元信息样式 */
+        .exam-meta {
+            font-size: 0.85rem;
+            color: #7f8c8d;
+            line-height: 1.5;
+        }
+        
+        .exam-meta .meta-item {
+            display: inline-block;
+            margin-right: 15px;
+            margin-bottom: 3px;
+        }
+        
+        .exam-meta .meta-item i {
+            margin-right: 5px;
+            color: #95a5a6;
+        }
+        
+        /* 操作按钮样式 */
+        .action-buttons {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        
+        .btn-action {
+            width: 36px;
+            height: 36px;
+            border-radius: 6px;
+            border: 1px solid #dce1e6;
+            background: white;
+            color: #7f8c8d;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        
+        .btn-action:hover {
+            border-color: #3498db;
+            color: #3498db;
+            background: #f8f9fa;
+        }
+        
+        .btn-action.btn-start:hover {
+            border-color: #27ae60;
+            color: #27ae60;
+        }
+        
+        .btn-action.btn-view:hover {
+            border-color: #3498db;
+            color: #3498db;
+        }
+        
+        .btn-action.btn-stats:hover {
+            border-color: #9b59b6;
+            color: #9b59b6;
+        }
+        
+        .btn-action.btn-edit:hover {
+            border-color: #f39c12;
+            color: #f39c12;
+        }
+        
+        .btn-action.btn-delete:hover {
+            border-color: #e74c3c;
+            color: #e74c3c;
+        }
+        
+        /* 班级标签样式 */
+        .class-tags {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        
+        .class-tag {
+            background: #ecf0f1;
+            color: #34495e;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            border: 1px solid #dce1e6;
+            display: block;
+            text-align: center;
+        }
+        
+        .class-tag:hover {
+            background: #3498db;
+            color: white;
+            border-color: #3498db;
+        }
+        
+        /* 统计信息样式 */
+        .stats-info {
+            text-align: left;
+        }
+        
+        .stats-item {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+        
+        .stats-item.attempts {
+            color: #3498db;
+        }
+        
+        .stats-item.score {
+            color: #27ae60;
+            font-weight: 600;
+        }
+        
+        .stats-item i {
+            margin-right: 5px;
+        }
+        
+        /* 高亮样式 */
+        .highlight-blue {
+            color: #3498db;
+            font-weight: 600;
+        }
+        
+        .highlight-red {
+            color: #e74c3c;
+            font-weight: 600;
+        }
+        
+        /* 加载动画样式 */
+        .loading-spinner {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 300px;
+            background: white;
+        }
+        
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid #f1f3f4;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* 空状态样式 */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #7f8c8d;
+        }
+        
+        .empty-state i {
+            font-size: 3rem;
+            color: #bdc3c7;
+            margin-bottom: 20px;
+        }
+        
+        .empty-state h3 {
+            font-size: 1.3rem;
+            margin-bottom: 10px;
+            color: #34495e;
+            font-weight: 500;
+        }
+        
+        .empty-state p {
+            font-size: 0.95rem;
+            color: #7f8c8d;
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .main-container {
+                margin: 15px;
+                border-radius: 6px;
+            }
+            
+            .page-header {
+                padding: 20px;
+            }
+            
+            .page-header h1 {
+                font-size: 1.5rem;
+            }
+            
+            .table-container {
+                padding: 15px;
+            }
+            
+            .exam-table th,
+            .exam-table td {
+                padding: 12px 8px;
+                font-size: 0.85rem;
+            }
+            
+            .exam-title {
+                font-size: 1.2rem;
+            }
+            
+            .btn-action {
+                width: 32px;
+                height: 32px;
+            }
+            
+            .action-buttons {
+                justify-content: center;
+            }
+            
+            .exam-table th:nth-child(2),
+            .exam-table td:nth-child(2) {
+                width: 20% !important;
+            }
+            
+            .exam-table th:nth-child(3),
+            .exam-table td:nth-child(3),
+            .exam-table th:nth-child(4),
+            .exam-table td:nth-child(4),
+            .exam-table th:nth-child(5),
+            .exam-table td:nth-child(5),
+            .exam-table th:nth-child(6),
+            .exam-table td:nth-child(6) {
+                width: 16% !important;
+            }
+        }
+        
+        /* 通知样式 */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            min-width: 300px;
+            border-radius: 6px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+    </style>
+</head>
+<body>
+    
+    {% extends 'header.html' %}
+    {% block content %}
+    
+    <div class="main-container fade-in">
+        <!-- 页面头部 -->
+        <div class="page-header">
+            <h1><i class="fas fa-file-alt"></i> 试卷列表</h1>
+            <div class="subtitle">查看和管理所有可用的试卷</div>
+        </div>
+        
+        <!-- 提示信息 -->
+        <div class="alert-banner">
+            <i class="fas fa-info-circle"></i> 
+            请注意：带有"测试"或"考试"字样的试卷为考试模式，仅能做一次
+        </div>
+        
+        <!-- 加载状态 -->
+        <div id="loading" class="loading-spinner">
+            <div class="spinner"></div>
+        </div>
+        
+        <!-- 表格容器 -->
+        <div class="table-container" id="table-container" style="display: none;">
+            <table id="examTable" class="table exam-table">
+                <thead>
+                    <tr>
+                        <th style="width: 50%;">试卷</th>
+                        <th style="width: 15%;">班级</th>
+                        <th style="width: 10%;">教师</th>
+                        <th style="width: 10%;">时间</th>
+                        <th style="width: 10%;">统计</th>
+                        <th style="width: 5%;">操作</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+                </div>
+                <div class="table-responsive table-container" id="table-container" style="display: none;">
+                    <table id="examTable" class="table table-bordered table-hover table-striped">
+                        <thead class="table-dark">
+                            <tr class="text-center">
+                                <th>试卷</th>
+                                <th>班级</th>
+                                <th>教师</th>
+                                <th>时间</th>
+                                <!-- 合并“已做次数”和“最高分”列 -->
+                                <th>已做次数 / 最高分</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        $(document).ready(function() {
+            let userRole;
+
+            // 初始化 Bootstrap Tooltip
+            function initTooltips() {
+                $('[data-toggle="tooltip"]').tooltip();
+            }
+
+            // 处理试卷标题，添加高亮
+            function processTitle(title) {
+                // 替换【...】内的内容并高亮
+                title = title.replace(/【([^】]*)】/g, function(match, p1) {
+                    // 在【...】内高亮“测试”或“考试”
+                    let inner = p1.replace(/(测试|考试)/g, '<span class="highlight-red">$1</span>');
+                    return `<span class="highlight-blue">【${inner}】</span>`;
+                });
+                // 替换剩余的“测试”或“考试”并高亮
+                title = title.replace(/(测试|考试)/g, '<span class="highlight-red">$1</span>');
+                return title;
+            }
+
+            // 获取用户角色
+            $.getJSON('/current_user_role', function(role) {
+                userRole = role;
+                
+                // 获取试卷数据
+                $.getJSON('/exams', function(exams) {
+                    const tableBody = $('#examTable tbody');
+                    tableBody.empty();
+                    
+if (exams.length === 0) {
+                        tableBody.append(`
+                            <tr>
+                                <td colspan="6" class="empty-state">
+                                    <i class="fas fa-inbox"></i>
+                                    <h3>暂无试卷数据</h3>
+                                    <p>还没有创建任何试卷，请联系管理员添加试卷</p>
+                                </td>
+                            </tr>
+                        `);
+                    } else {
+                        exams.forEach(function(exam) {
+// 构建操作按钮
+                            let operationButtons = `
+                                <div class="action-buttons">
+                                    <button class="btn-action btn-start" data-toggle="tooltip" data-placement="top" title="开始测试" onclick="location.href='/take_exam/${exam.id}'" aria-label="开始测试">
+                                        <i class="fas fa-play"></i>
+                                    </button>
+                                    <button class="btn-action btn-view" data-toggle="tooltip" data-placement="top" title="我的做题" onclick="location.href='/user_exam_results/${exam.id}'" aria-label="我的做题">
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                            `;
+
+                            // 根据用户角色添加管理和删除按钮
+                            if (userRole === 'admin' || (userRole === 'teacher' && exam.creator_id === {{ current_user.id }})) {
+                                operationButtons += `
+                                    <button class="btn-action btn-stats" data-toggle="tooltip" data-placement="top" title="查看统计" onclick="location.href='/exam_statistics_page/${exam.id}'" aria-label="查看统计">
+                                        <i class="fas fa-chart-bar"></i>
+                                    </button>
+                                    <button class="btn-action btn-edit" data-toggle="tooltip" data-placement="top" title="管理试卷" onclick="location.href='/manage_exam/${exam.id}'" aria-label="管理试卷">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn-action btn-delete" data-toggle="tooltip" data-placement="top" title="删除试卷" onclick="deleteExam(${exam.id}, this)" aria-label="删除试卷">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                `;
+                            }
+
+                            operationButtons += `</div>`;
+
+                            const attempts = exam.user_attempts !== undefined ? exam.user_attempts : 0;
+                            const maxScore = exam.user_max_score !== null ? exam.user_max_score : '暂无';
+
+                            // 处理试卷标题
+                            const processedTitle = processTitle(exam.name);
+
+const rowHtml = `
+                                <tr>
+                                    <td>
+                                        <div class="exam-title">
+                                            <i class="fas fa-file-alt"></i>
+                                            <a href="/take_exam/${exam.id}" aria-label="开始测试">${processedTitle}</a>
+                                        </div>
+                                        <div class="exam-meta">
+                                            <span class="meta-item">
+                                                <i class="fas fa-user"></i> ${exam.creator_name || "未知"}
+                                            </span>
+                                            <span class="meta-item">
+                                                <i class="fas fa-calendar"></i> ${exam.created_at}
+                                            </span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="class-tags">
+                                            ${exam.class.map(cls => `
+                                                <a href="/class/analysis/${cls[0]}" class="class-tag">${cls[1]}</a>
+                                            `).join('')}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="text-center">
+                                            <strong>${exam.creator_name || "未知"}</strong>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="text-center">
+                                            <div class="meta-item">
+                                                <i class="fas fa-clock"></i> ${exam.created_at}
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="stats-info">
+                                            <span class="stats-item attempts">
+                                                <i class="fas fa-redo"></i> 已做 ${attempts}
+                                            </span>
+                                            <span class="stats-item score">
+                                                <i class="fas fa-trophy"></i> ${maxScore}
+                                            </span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        ${operationButtons}
+                                    </td>
+                                </tr>
+                            `;
+                            tableBody.append(rowHtml);
+                        });
+                    }
+                    
+                    // 初始化 Tooltip
+                    initTooltips();
+
+                    // 隐藏加载指示器，显示表格
+                    $('#loading').hide();
+                    $('#table-container').show();
+                }).fail(function(jqxhr, textStatus, error) {
+                    console.error("加载试卷数据失败: " + textStatus + ", " + error);
+                    $('#loading').html('<p class="text-danger">加载试卷数据失败，请稍后再试。</p>');
+                });
+            });
+        });
+
+// 删除试卷
+        function deleteExam(examId, button) {
+            if (confirm('确定要删除这个试卷吗？\n\n删除后将无法恢复，请谨慎操作！')) {
+                const row = $(button).closest('tr');
+                row.fadeOut(300, function() {
+                    $.ajax({
+                        url: '/delete_exam/' + examId,
+                        type: 'DELETE',
+                        success: function(response) {
+                            showNotification(response.message, 'success');
+                            row.remove();
+                        },
+                        error: function(xhr) {
+                            showNotification('删除失败: ' + (xhr.responseJSON.message || '未知错误'), 'error');
+                            row.fadeIn(300);
+                        }
+                    });
+                });
+            }
+        }
+        
+        // 显示通知消息
+        function showNotification(message, type) {
+            const notification = $(`
+                <div class="notification alert alert-${type === 'success' ? 'success' : 'danger'} alert-dismissible fade show" role="alert">
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `);
+            
+            $('body').prepend(notification);
+            
+            setTimeout(() => {
+                notification.fadeOut(300, function() {
+                    $(this).remove();
+                });
+            }, 3000);
+        }
+    </script>
+    <script src="{{ url_for('static', filename='js/fontawesome.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/5.2.3/bootstrap.bundle.min.js') }}"></script>
+    {% endblock %}
+</body>
+</html>

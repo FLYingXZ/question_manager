@@ -1,0 +1,602 @@
+<title>学生成绩概览</title>
+{% extends "header.html" %}
+{% block content %}
+
+<style>
+/* 页面局部美化（不影响header.html） */
+.analysis-wrap{
+    padding: 18px 18px 8px;
+}
+.page-title{
+    display:flex;
+    align-items:flex-end;
+    justify-content:space-between;
+    gap:12px;
+    flex-wrap:wrap;
+    margin-bottom: 14px;
+}
+.page-title h2{
+    margin:0;
+    font-weight:700;
+    letter-spacing:.2px;
+    color:#2c3e50;
+}
+.subtitle{
+    color:#6c7a89;
+    font-size: 0.95rem;
+}
+.card{
+    border: 1px solid rgba(52,73,94,.08);
+    box-shadow: 0 8px 20px rgba(44,62,80,.06);
+    border-radius: 10px;
+}
+.card .card-title{
+    font-weight:700;
+    color:#2c3e50;
+}
+.badge-soft{
+    background: rgba(52,152,219,.12);
+    color:#2c3e50;
+    border: 1px solid rgba(52,152,219,.18);
+    padding: 6px 10px;
+    border-radius: 999px;
+    font-weight: 600;
+}
+.kpi{
+    display:flex;
+    gap:12px;
+    flex-wrap:wrap;
+}
+.kpi .kpi-item{
+    flex: 1 1 180px;
+    background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+    border: 1px solid rgba(52,73,94,.08);
+    border-radius: 10px;
+    padding: 12px 14px;
+}
+.kpi .label{
+    color:#6c7a89;
+    font-size:.9rem;
+}
+.kpi .value{
+    font-size: 1.35rem;
+    font-weight: 800;
+    color:#2c3e50;
+    margin-top: 4px;
+}
+.kpi .hint{
+    margin-top: 6px;
+    color:#7f8c8d;
+    font-size: .85rem;
+}
+.chart-box{
+    height: 320px;
+}
+.chart-box.tall{
+    height: 360px;
+}
+.table thead th{
+    white-space: nowrap;
+}
+.table td{
+    vertical-align: middle;
+}
+.sortable{
+    cursor:pointer;
+    user-select:none;
+}
+.rank-pill{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+}
+.rank-pill .dot{
+    width:8px;height:8px;border-radius:50%;
+    background:#bdc3c7;
+}
+.rank-pill.good .dot{ background:#2ecc71;}
+.rank-pill.mid .dot{ background:#f1c40f;}
+.rank-pill.bad .dot{ background:#e74c3c;}
+.progress{
+    height: 10px;
+    border-radius: 999px;
+    background: rgba(44,62,80,.08);
+}
+.progress-bar{
+    border-radius: 999px;
+}
+.mini-list li{
+    padding: 6px 0;
+    border-bottom: 1px dashed rgba(44,62,80,.12);
+}
+.mini-list li:last-child{
+    border-bottom:none;
+}
+.tip{
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(52,73,94,.08);
+    background: rgba(52,152,219,.06);
+    color:#2c3e50;
+}
+.tip strong{ font-weight: 800; }
+@media (max-width: 768px){
+    .analysis-wrap{ padding: 14px 12px 6px; }
+    .chart-box{ height: 260px; }
+}
+</style>
+
+<div class="analysis-wrap">
+    <div class="page-title">
+        <div>
+            <h2>{{ student.usernick or student.username }} 的成绩分析</h2>
+            <div class="subtitle">
+                班级：{{ student.user_class.name if student.user_class else '未分配' }}
+                <span class="mx-2">·</span>
+                <span class="badge-soft">共 {{ exam_data|length }} 次考试</span>
+            </div>
+        </div>
+        <div class="subtitle">
+            统计口径：按“历次考试成绩”表数据计算（前端实时分析）
+        </div>
+    </div>
+
+    <!-- KPI 概览 -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
+                <h5 class="card-title mb-0">概览</h5>
+                <div class="subtitle">平均成绩：<strong>{{ average_score }}</strong></div>
+            </div>
+
+            <div class="kpi" id="kpiArea">
+                <div class="kpi-item">
+                    <div class="label">最高分</div>
+                    <div class="value" id="kpiMax">-</div>
+                    <div class="hint">历史最高分</div>
+                </div>
+                <div class="kpi-item">
+                    <div class="label">最低分</div>
+                    <div class="value" id="kpiMin">-</div>
+                    <div class="hint">历史最低分</div>
+                </div>
+                <div class="kpi-item">
+                    <div class="label">最近一次分数</div>
+                    <div class="value" id="kpiLastScore">-</div>
+                    <div class="hint" id="kpiDeltaHint">与上一次对比：-</div>
+                </div>
+                <div class="kpi-item">
+                    <div class="label">最佳排名</div>
+                    <div class="value" id="kpiBestRank">-</div>
+                    <div class="hint">越小越好</div>
+                </div>
+            </div>
+
+            <div class="tip mt-3" id="trendTip" style="display:none;"></div>
+        </div>
+    </div>
+
+    <!-- 图表区 -->
+    <div class="row g-3 mb-4">
+        <div class="col-lg-8">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">成绩趋势（折线）</h5>
+                    <div class="subtitle mb-2">观察分数波动与阶段性变化</div>
+                    <div class="chart-box">
+                        <canvas id="scoreLineChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">班级排名（柱状）</h5>
+                    <div class="subtitle mb-2">柱越低表示排名越靠前</div>
+                    <div class="chart-box">
+                        <canvas id="rankBarChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 考试成绩表格 -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                <h5 class="card-title mb-0">历次考试成绩</h5>
+                <div class="subtitle">提示：可点击“班级排名”排序</div>
+            </div>
+
+            <div class="table-responsive mt-2">
+                <table class="table table-hover align-middle" id="examTable">
+                    <thead>
+                        <tr>
+                            <th>考试名称</th>
+                            <th>日期</th>
+                            <th>分数</th>
+                            <th class="sortable" data-sort="rank">班级排名 <i class="fas fa-sort"></i></th>
+                            <th>班级人数</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for exam in exam_data %}
+                        <tr>
+                            <td>
+                                <a style="text-decoration: none;" href="/exam_statistics_page/{{exam.exam_id}}">
+                                    {{ exam.exam_name }}
+                                </a>
+                            </td>
+                            <td>{{ exam.date }}</td>
+                            <td class="score-cell">{{ exam.score }}</td>
+                            <td class="rank-cell">
+                                <span class="rank-pill">
+                                    <span class="dot"></span>
+                                    <span class="rank-text">{{ exam.rank }}/{{ exam.class_size }}</span>
+                                </span>
+                            </td>
+                            <td>{{ exam.class_size }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="subtitle mt-2" id="tableNote"></div>
+        </div>
+    </div>
+
+    <!-- 知识点：雷达 + Top/Bottom -->
+    <div class="row g-3 mb-4">
+        <div class="col-lg-7">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">知识点掌握雷达图</h5>
+                    <div class="subtitle mb-2">更直观对比各知识点正确率</div>
+                    <div class="chart-box tall">
+                        <canvas id="knowledgeRadarChart"></canvas>
+                    </div>
+                    <div class="subtitle mt-2">若知识点较多，建议后端按正确率或题量筛选后展示。</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-5">
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h5 class="card-title">强项知识点（Top 5）</h5>
+                    <ul class="mini-list mb-0" id="topKnowledge"></ul>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">薄弱知识点（Bottom 5）</h5>
+                    <ul class="mini-list mb-0" id="bottomKnowledge"></ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 知识点掌握情况（原表格保留并美化） -->
+    <div class="card mb-3">
+        <div class="card-body">
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                <h5 class="card-title mb-0">知识点掌握情况（明细）</h5>
+                <div class="subtitle">掌握程度 = 正确率（%）</div>
+            </div>
+
+            <div class="table-responsive mt-2">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th style="min-width: 160px;">知识点</th>
+                            <th style="width: 110px;">正确率</th>
+                            <th style="width: 140px;">正确/总题数</th>
+                            <th>掌握程度</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for k in knowledge_list %}
+                        <tr>
+                            <td>{{ k.knowledge }}</td>
+                            <td><strong>{{ k.correct_rate }}%</strong></td>
+                            <td>{{ k.correct }}/{{ k.total }}</td>
+                            <td>
+                                <div class="progress" title="{{ k.correct_rate }}%">
+                                    <div class="progress-bar
+                                        {% if k.correct_rate >= 85 %} bg-success
+                                        {% elif k.correct_rate >= 60 %} bg-warning
+                                        {% else %} bg-danger
+                                        {% endif %}"
+                                        role="progressbar"
+                                        style="width: {{ k.correct_rate }}%"
+                                        aria-valuenow="{{ k.correct_rate }}"
+                                        aria-valuemin="0"
+                                        aria-valuemax="100">
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+<script>
+$(document).ready(function() {
+    // ========= 1) 表格排序（保留并修复：数值解析更稳） =========
+    $('.sortable').click(function() {
+        const column = $(this).data('sort');
+        const table = $(this).closest('table');
+        const rows = table.find('tbody > tr').get();
+        const isAsc = $(this).hasClass('asc');
+
+        $(this).toggleClass('asc', !isAsc).toggleClass('desc', isAsc);
+        $(this).find('i').removeClass('fa-sort fa-sort-up fa-sort-down')
+                         .addClass(!isAsc ? 'fa-sort-up' : 'fa-sort-down');
+
+        const colIndex = $(this).index();
+
+        rows.sort(function(a, b) {
+            const aVal = getCellValue(a, colIndex);
+            const bVal = getCellValue(b, colIndex);
+
+            if (column === 'rank') {
+                const aRank = parseInt((aVal.split('/')[0] || '0').trim(), 10);
+                const bRank = parseInt((bVal.split('/')[0] || '0').trim(), 10);
+                return !isAsc ? aRank - bRank : bRank - aRank; // 点击后：默认升序（名次小更好）
+            }
+            const na = parseFloat(aVal) || 0;
+            const nb = parseFloat(bVal) || 0;
+            return !isAsc ? na - nb : nb - na;
+        });
+
+        $.each(rows, function(index, row) {
+            table.children('tbody').append(row);
+        });
+    });
+
+    function getCellValue(row, index) {
+        return $(row).children('td').eq(index).text().trim();
+    }
+
+    // ========= 2) 从后端数据构造图表数据（Jinja -> JS） =========
+    // 说明：确保 exam.score / exam.rank / exam.class_size / exam.exam_name / exam.date 可用
+    const examData = [
+        {% for exam in exam_data %}
+        {
+            name: {{ exam.exam_name|tojson }},
+            date: {{ exam.date|tojson }},
+            score: Number({{ exam.score|default(0) }}),
+            rank: Number({{ exam.rank|default(0) }}),
+            classSize: Number({{ exam.class_size|default(0) }})
+        }{% if not loop.last %},{% endif %}
+        {% endfor %}
+    ];
+
+    const knowledgeData = [
+        {% for k in knowledge_list %}
+        {
+            name: {{ k.knowledge|tojson }},
+            rate: Number({{ k.correct_rate|default(0) }}),
+            correct: Number({{ k.correct|default(0) }}),
+            total: Number({{ k.total|default(0) }})
+        }{% if not loop.last %},{% endif %}
+        {% endfor %}
+    ];
+
+    // ========= 3) KPI 计算 =========
+    if (examData.length > 0){
+        const scores = examData.map(x => x.score);
+        const ranks = examData.map(x => x.rank).filter(x => x > 0);
+        const maxScore = Math.max(...scores);
+        const minScore = Math.min(...scores);
+        const last = examData[examData.length - 1];
+        const prev = examData.length >= 2 ? examData[examData.length - 2] : null;
+
+        $('#kpiMax').text(maxScore);
+        $('#kpiMin').text(minScore);
+        $('#kpiLastScore').text(last.score);
+
+        if (ranks.length > 0){
+            $('#kpiBestRank').text(Math.min(...ranks));
+        }else{
+            $('#kpiBestRank').text('-');
+        }
+
+        if (prev){
+            const delta = last.score - prev.score;
+            const sign = delta > 0 ? '+' : '';
+            $('#kpiDeltaHint').text(`与上一次对比：${sign}${delta}`);
+            const tip = $('#trendTip');
+            tip.show();
+
+            if (delta >= 10){
+                tip.html(`<strong>进步明显：</strong>最近一次较上一次提升 ${sign}${delta} 分，建议复盘本次提升来源（题型/知识点/时间分配）。`);
+            }else if (delta > 0){
+                tip.html(`<strong>小幅进步：</strong>最近一次提升 ${sign}${delta} 分，可继续巩固薄弱知识点，稳定发挥。`);
+            }else if (delta === 0){
+                tip.html(`<strong>持平：</strong>最近两次分数一致，建议关注稳定性与错题复盘深度。`);
+            }else{
+                tip.html(`<strong>出现回落：</strong>最近一次较上一次下降 ${delta} 分，建议查看“薄弱知识点”与最近试卷错题集中点。`);
+            }
+        }else{
+            $('#kpiDeltaHint').text('与上一次对比：-');
+        }
+    }else{
+        $('#tableNote').text('暂无考试数据，无法生成趋势图与统计指标。');
+    }
+
+    // ========= 4) 表格“排名颜色”小增强（按排名百分位） =========
+    $('#examTable tbody tr').each(function(){
+        const text = $(this).find('.rank-text').text().trim(); // "3/25"
+        const parts = text.split('/');
+        const r = parseInt((parts[0]||'0').trim(),10);
+        const n = parseInt((parts[1]||'0').trim(),10);
+        const pill = $(this).find('.rank-pill');
+        pill.removeClass('good mid bad');
+        if (r>0 && n>0){
+            const pct = r / n;
+            if (pct <= 0.25) pill.addClass('good');
+            else if (pct <= 0.6) pill.addClass('mid');
+            else pill.addClass('bad');
+        }
+    });
+
+    // ========= 5) Chart.js：成绩折线图 =========
+    if (examData.length > 0){
+        const labels = examData.map(x => x.name);
+        const scoreLine = examData.map(x => x.score);
+
+        new Chart(document.getElementById('scoreLineChart'), {
+            type: 'line',
+            data: {
+                labels,
+                datasets: [{
+                    label: '分数',
+                    data: scoreLine,
+                    borderColor: '#3498db',
+                    backgroundColor: 'rgba(52,152,219,.15)',
+                    tension: 0.25,
+                    fill: true,
+                    pointRadius: 4,
+                    pointHoverRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins:{
+                    legend:{ display:true },
+                    tooltip:{
+                        callbacks:{
+                            afterLabel: function(ctx){
+                                const i = ctx.dataIndex;
+                                const e = examData[i];
+                                if (!e) return '';
+                                return `日期：${e.date} / 排名：${e.rank}/${e.classSize}`;
+                            }
+                        }
+                    }
+                },
+                scales:{
+                    y:{
+                        beginAtZero: true,
+                        grid:{ color:'rgba(44,62,80,.08)' }
+                    },
+                    x:{
+                        grid:{ display:false }
+                    }
+                }
+            }
+        });
+
+        // ========= 6) Chart.js：排名柱状图 =========
+        const rankVals = examData.map(x => x.rank || null);
+        new Chart(document.getElementById('rankBarChart'), {
+            type: 'bar',
+            data: {
+                labels,
+                datasets: [{
+                    label: '班级排名',
+                    data: rankVals,
+                    backgroundColor: 'rgba(46,204,113,.18)',
+                    borderColor: 'rgba(46,204,113,.7)',
+                    borderWidth: 1,
+                    borderRadius: 6
+                }]
+            },
+            options:{
+                responsive:true,
+                maintainAspectRatio:false,
+                plugins:{
+                    legend:{ display:true },
+                    tooltip:{
+                        callbacks:{
+                            afterLabel: function(ctx){
+                                const i = ctx.dataIndex;
+                                const e = examData[i];
+                                return e ? `班级人数：${e.classSize}` : '';
+                            }
+                        }
+                    }
+                },
+                scales:{
+                    y:{
+                        beginAtZero:true,
+                        reverse:true, // 排名越小越好：反转y轴
+                        ticks:{ precision:0 },
+                        grid:{ color:'rgba(44,62,80,.08)' }
+                    },
+                    x:{ grid:{ display:false } }
+                }
+            }
+        });
+    }
+
+    // ========= 7) 知识点：雷达图 + Top/Bottom =========
+    if (knowledgeData.length > 0){
+        // Top/Bottom
+        const sorted = [...knowledgeData].sort((a,b)=> b.rate - a.rate);
+        const top = sorted.slice(0, 5);
+        const bottom = sorted.slice(-5).reverse();
+
+        function renderList(el, arr){
+            const $el = $(el);
+            $el.empty();
+            arr.forEach(x=>{
+                const extra = (x.total>0) ? `（${x.correct}/${x.total}）` : '';
+                $el.append(`<li><strong>${x.name}</strong>：${x.rate}% <span class="subtitle">${extra}</span></li>`);
+            });
+            if (arr.length === 0) $el.append('<li class="subtitle">暂无数据</li>');
+        }
+        renderList('#topKnowledge', top);
+        renderList('#bottomKnowledge', bottom);
+
+        // 雷达图（知识点过多会拥挤：这里全量展示；可改成topN）
+        const kLabels = knowledgeData.map(x => x.name);
+        const kRates = knowledgeData.map(x => x.rate);
+
+        new Chart(document.getElementById('knowledgeRadarChart'), {
+            type:'radar',
+            data:{
+                labels: kLabels,
+                datasets:[{
+                    label:'正确率(%)',
+                    data: kRates,
+                    borderColor:'#9b59b6',
+                    backgroundColor:'rgba(155,89,182,.18)',
+                    pointBackgroundColor:'#9b59b6',
+                    pointRadius:3
+                }]
+            },
+            options:{
+                responsive:true,
+                maintainAspectRatio:false,
+                plugins:{ legend:{ display:true } },
+                scales:{
+                    r:{
+                        suggestedMin:0,
+                        suggestedMax:100,
+                        grid:{ color:'rgba(44,62,80,.10)' },
+                        angleLines:{ color:'rgba(44,62,80,.10)' },
+                        ticks:{ backdropColor:'transparent' }
+                    }
+                }
+            }
+        });
+    }else{
+        $('#topKnowledge').html('<li class="subtitle">暂无知识点数据</li>');
+        $('#bottomKnowledge').html('<li class="subtitle">暂无知识点数据</li>');
+    }
+});
+</script>
+
+{% endblock %}

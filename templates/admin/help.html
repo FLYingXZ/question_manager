@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <link rel="icon" href="/static/favicon.ico" type="image/x-icon">
+    <script src="{{ url_for('static', filename='js/marked.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/highlight.min.js') }}"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/default.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/5.2.3/bootstrap.min.css') }}">
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>更新日志</title>
+</head>
+
+<body>
+    {% extends 'header.html' %}
+    {% block content %}
+    <div class="container mt-4">
+        <button id="edit-btn" class="btn btn-primary mb-3" onclick="editMarkdown()">编辑</button>
+        
+        <div id="markdown-edit" class="mb-3" style="display: none;">
+            <textarea id="markdown-editor" class="form-control" style="height: 80vh;"></textarea>
+            <div class="mt-2">
+                <button onclick="saveMarkdown()" class="btn btn-success">保存</button>
+                <button onclick="cancelEdit()" class="btn btn-secondary">取消</button>
+            </div>
+        </div>
+        
+        <div id="markdown-view" class="new-container"></div>
+    </div>
+
+    <script>
+        window.onload = function() {
+            fetch('/uploads/files/readme.md')
+                .then(response => response.text())
+                .then(text => {
+                    const htmlContent = marked.marked(text);
+                    document.getElementById('markdown-view').innerHTML = htmlContent;
+                    applyHighlight();
+                })
+                .catch(error => console.error('Error loading the Markdown file:', error));
+        };
+
+        function editMarkdown() {
+            document.getElementById('markdown-view').style.display = 'none';
+            document.getElementById('edit-btn').style.display = 'none';
+            document.getElementById('markdown-edit').style.display = 'block';
+
+            fetch('/uploads/files/readme.md')
+                .then(response => response.text())
+                .then(text => {
+                    document.getElementById('markdown-editor').value = text;
+                });
+        }
+
+        function saveMarkdown() {
+            const markdownContent = document.getElementById('markdown-editor').value;
+            fetch('/save-markdown', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: 'markdown=' + encodeURIComponent(markdownContent)
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message);
+                const htmlContent = marked.marked(markdownContent);
+                document.getElementById('markdown-view').innerHTML = htmlContent;
+                applyHighlight();
+                cancelEdit();
+            })
+            .catch(error => console.error('错误:', error));
+        }
+
+        function cancelEdit() {
+            document.getElementById('markdown-edit').style.display = 'none';
+            document.getElementById('markdown-view').style.display = 'block';
+            document.getElementById('edit-btn').style.display = 'inline';
+        }
+
+        function applyHighlight() {
+            document.querySelectorAll('pre code').forEach((block) => {
+                hljs.highlightBlock(block);
+            });
+            
+            // 为表格添加 Bootstrap 的样式，以便显示边框
+            document.querySelectorAll('table').forEach(table => {
+                table.classList.add('table', 'table-bordered');
+            });
+        }
+    </script>
+    {% endblock %}
+</body>
+
+</html>

@@ -1,0 +1,71 @@
+    {% extends 'header.html' %}
+    {% block content %}
+    <div class="new-container">
+        <h1>配置管理</h1>
+        <form id="configForm">
+            {% set form_fields = [
+                {'label': '允许的 IP 地址 (逗号分隔)', 'key': 'ALLOWED_IPS', 'is_array': True},
+                {'label': 'BAIDU_GPT_ID', 'key': 'BAIDU_GPT_ID', 'is_array': False},
+                {'label': 'BAIDU_GPT_SECRET_KEY', 'key': 'BAIDU_GPT_SECRET_KEY', 'is_array': False},
+                {'label': 'CHATGPT_KEY', 'key': 'CHATGPT_KEY', 'is_array': False},
+                {'label': 'CHATGPT_BASE_URL', 'key': 'CHATGPT_BASE_URL', 'is_array': False},
+                {'label': 'SPARKAI_URL', 'key': 'SPARKAI_URL', 'is_array': False},
+                {'label': 'SPARKAI_APP_ID', 'key': 'SPARKAI_APP_ID', 'is_array': False},
+                {'label': 'SPARKAI_API_SECRET', 'key': 'SPARKAI_API_SECRET', 'is_array': False},
+                {'label': 'SPARKAI_API_KEY', 'key': 'SPARKAI_API_KEY', 'is_array': False},
+            ] %}
+            
+            {% for field in form_fields %}
+                <div class="form-group">
+                    <label for="{{ field.key }}">{{ field.label }}:</label>
+                    <input type="text" id="{{ field.key }}" name="{{ field.key }}" class="form-control" 
+                           value="{% if field.is_array %}{{ ','.join(config_data[field.key]) }}{% else %}{{ config_data[field.key] }}{% endif %}">
+                </div><br>
+            {% endfor %}
+
+
+            <button type="button" class="btn-custom-new" onclick="saveConfig()">保存配置</button>
+        </form>
+    </div>
+
+    <style>
+        .form-control {
+            width: 80%;
+            /* 设置宽度为90%，确保内容显示 */
+            padding: 10px;
+            /* 增加内边距，使输入框更舒适 */
+            font-size: 16px;
+            /* 调整字体大小 */
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+    </style>
+
+    <script>
+        function saveConfig() {
+            const configData = {
+                ALLOWED_IPS: document.getElementById('ALLOWED_IPS').value.split(','),
+                BAIDU_GPT_ID: document.getElementById('BAIDU_GPT_ID').value,
+                BAIDU_GPT_SECRET_KEY: document.getElementById('BAIDU_GPT_SECRET_KEY').value,
+                CHATGPT_KEY: document.getElementById('CHATGPT_KEY').value,
+                CHATGPT_BASE_URL: document.getElementById('CHATGPT_BASE_URL').value,
+                SPARKAI_URL: document.getElementById('SPARKAI_URL').value,
+                SPARKAI_APP_ID: document.getElementById('SPARKAI_APP_ID').value,
+                SPARKAI_API_SECRET: document.getElementById('SPARKAI_API_SECRET').value,
+                SPARKAI_API_KEY: document.getElementById('SPARKAI_API_KEY').value
+            };
+
+            fetch('/save_config', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(configData)
+            }).then(response => response.json())
+              .then(data => alert(data.message))
+              .catch(error => console.error('Error:', error));
+        }
+    </script>
+    {% endblock %}
+</body>
+</html>

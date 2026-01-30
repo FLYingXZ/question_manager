@@ -1,0 +1,17 @@
+{% extends "header.html" %}
+{% block title %}{{ action }}页面{% endblock %}
+
+{% block content %}
+<h2>{{ action }}HTML页面</h2>
+<form method="POST" enctype="multipart/form-data">
+    <label for="title">页面标题:</label>
+    <input type="text" id="title" name="title" 
+           value="{{ page.title if page else '' }}" required>
+    
+    <label for="html_file">HTML文件:</label>
+    <input type="file" id="html_file" name="html_file" accept=".html"
+           {% if not page %}required{% endif %}>
+    
+    <button type="submit">保存</button>
+</form>
+{% endblock %}

@@ -1,0 +1,15 @@
+{% extends "header.html" %}
+{% block title %}主页{% endblock %}
+
+{% block content %}
+<section class="gallery">
+    {% for page in pages %}
+    <div class="card">
+        <img src="{{ url_for('static', filename='thumbnails/' + page.thumbnail) }}" 
+             alt="{{ page.title }}" class="thumbnail">
+        <h3>{{ page.title }}</h3>
+        <a href="{{ url_for('html_view_page', page_id=page.id) }}" target="_blank">查看页面</a>
+    </div>
+    {% endfor %}
+</section>
+{% endblock %}

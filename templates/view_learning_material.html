@@ -1,0 +1,63 @@
+{% extends 'header.html' %}
+{% block content %}
+<!-- view_learning_material.html -->
+<head>
+    
+    <base href="https://flying.zj.cn/">
+    <meta charset="UTF-8">
+    <title>查看课件</title>
+</head>
+<body>
+    <h1>{{ material.title }}</h1>
+    <div id="learning-materials-content">{{ material.content | safe }}</div>
+    
+    <script>
+        $(document).ready(async function() {
+            // 查找并加载所有嵌入的题目
+            $('.embedded-question').each(async function() {
+                let questionId = $(this).data('question-id');
+                let questionResponse = await fetch(`/api/questions/${questionId}`);
+                let questionData = await questionResponse.json();
+
+                if (questionData.error) {
+                    $(this).html('题目未找到');
+                    return;
+                }
+
+                // 根据题目类型生成答题区域
+                let questionHtml = `<div>${questionData.content}</div>`;
+                
+                // 假设只有单选和填空题
+                if (questionData.content.includes('单选')) {
+                    questionHtml += '<select class="answer-input">';
+                    const options = questionData.content.match(/选项 [A-D]: (.+?)<br>/g);
+                    options.forEach(option => {
+                        let optionText = option.match(/选项 [A-D]: (.+?)<br>/)[1];
+                        questionHtml += `<option value="${optionText}">${optionText}</option>`;
+                    });
+                    questionHtml += '</select>';
+                } else {
+                    questionHtml += '<input type="text" class="answer-input" placeholder="输入答案">';
+                }
+                
+                questionHtml += `<button class="submit-answer-btn">提交</button><div class="answer-feedback" style="display: none;">答案反馈</div>`;
+                $(this).html(questionHtml);
+
+                // 判题逻辑
+                $(this).find('.submit-answer-btn').on('click', function() {
+                    let userAnswer = $(this).siblings('.answer-input').val().trim();
+                    let correctAnswer = questionData.answer.trim();
+                    let feedback = $(this).siblings('.answer-feedback');
+                    feedback.show();
+
+                    if (userAnswer === correctAnswer) {
+                        feedback.html('正确').css('color', 'green');
+                    } else {
+                        feedback.html(`错误，正确答案是：${correctAnswer}`).css('color', 'red');
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+{% endblock %}

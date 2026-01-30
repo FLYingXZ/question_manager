@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>添加题目</title>
+    <link rel="icon" href="/static/favicon.ico" type="image/x-icon">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/5.2.3/bootstrap.min.css') }}">
+    <style>
+        .form-label {
+            font-weight: bold;
+            font-size: 1rem;
+            color: #495057;
+            margin-bottom: 0.5rem;
+            display: inline-block;
+        }
+    
+        .form-label:after {
+            content: ' *';
+            color: #dc3545;
+            font-size: 0.9rem;
+        }
+    
+        .form-control {
+            border: 1px solid #ced4da;
+            border-radius: 0.25rem;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+    
+        .form-control:focus {
+            border-color: #80bdff;
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+        }
+    
+        .mb-3 {
+            margin-bottom: 1.5rem !important;
+        }
+    
+        .answer-difficulty-source {
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+        }
+    
+        .difficulty-source {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            width: 100%;
+        }
+    
+        textarea.form-control {
+            min-height: 130px;
+        }
+        .prompt-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .prompt-box {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            width: 600px;
+            height: 320px;
+            max-width: 90%;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .prompt-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .prompt-textarea {
+            height: 200px;
+            margin-bottom: 15px;
+            font-family: monospace;
+            font-size: 0.9rem;
+        }
+        
+        .prompt-footer {
+            text-align: right;
+        }
+        /* 添加单选按钮组样式 */
+        .btn-group .form-check-inline {
+            margin-right: 0.5rem;
+        }
+        .form-check-input:checked + .btn {
+            background-color: #0d6efd;
+            color: white;
+        }
+        .form-check-input {
+            opacity: 0;
+            position: absolute;
+        }
+        .form-check-label.btn {
+            min-width: 80px;
+            text-align: center;
+            border: 1px solid #dee2e6;
+        }
+    </style>
+</head>
+
+<body>
+    {% extends 'header.html' %}
+    {% block content %}
+    <div class="new-container">
+        <h3>添加题目</h3>
+        <a href="/upload_questions">批量导入</a>
+        <form id="addQuestionForm">
+            <div class="mb-3">
+                <label class="form-label">题目类型</label>
+                <div class="btn-group" role="group">
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="qtype" id="qtype0" value="0" checked>
+                        <label class="form-check-label btn btn-outline-secondary" for="qtype0">自动识别</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="qtype" id="qtype1" value="1">
+                        <label class="form-check-label btn btn-outline-secondary" for="qtype1">选择题</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="qtype" id="qtype2" value="2">
+                        <label class="form-check-label btn btn-outline-secondary" for="qtype2">材料题</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="qtype" id="qtype3" value="3">
+                        <label class="form-check-label btn btn-outline-secondary" for="qtype3">填空题</label>
+                    </div>
+                </div>
+            </div>
+            <div class="mb-3">
+                <label for="content" class="form-label">题目内容</label>
+                <button type="button" class="btn btn-warning btn-sm" onclick="html_format('#content')">清除格式</button>
+                <button type="button" class="btn btn-warning btn-sm" onclick="choose_format('#content')">选择题</button>
+                <textarea class="form-control" id="content" name="content" required></textarea>
+            </div>
+    
+            <div class="answer-difficulty-source mb-3">
+                <!-- 答案区域 -->
+                <div class="col-sm-8">
+                    <label for="answer" class="form-label">答案</label>
+                    <textarea class="form-control" style="height: 110px;" id="answer" name="answer" required></textarea>
+                </div>
+    
+                <!-- 难度和来源区域 -->
+                <div class="difficulty-source">
+                    <div class="col-sm-12">
+                        <label for="difficulty" class="form-label">难度</label>
+                        <a href="javascript:void(0);" onclick="openPopup(0)" style="font-size: smaller; color: blue;">说明</a>
+                        <!-- 将难度输入改为下拉选择框 -->
+                        <select class="form-control" id="difficulty" name="difficulty" required>
+                            <option value="" selected>请选择难度</option>
+                            <option value="1">1 - 简单</option>
+                            <option value="2">2 - 较简单</option>
+                            <option value="3">3 - 中等</option>
+                            <option value="4">4 - 较难</option>
+                            <option value="5">5 - 困难</option>
+                        </select>
+                    </div>
+                    <div class="col-sm-12">
+                        <label for="source" class="form-label">来源</label>
+                        <input type="text" class="form-control" id="source" name="source">
+                    </div>
+                </div>
+            </div>
+    
+            <div class="mb-3">
+                <label for="knowledge_point" class="form-label">知识点(点击标签选择)</label>
+                <!-- 知识点标签区 -->
+                <div id="knowledge-points"></div>
+            </div>
+    
+            <div class="mb-3">
+                <label for="analysis" class="form-label">解析</label>
+                <div class="d-flex align-items-center mb-3">
+                    <select id="analysisMode" class="form-control me-2" style="width: 150px;">
+                        <option value="chatgpt4omini">chatgpt-4o-mini</option>
+                        <option value="chatgpt3.5">chatgpt-3.5</option>
+                        <option value="deepseekv3">DeepSeek V3</option>
+                        <option value="deepseekr1">DeepSeek R1（极慢）</option>
+                        <option value="baidu">文心一言 4.0</option>
+                        <option value="chatgpt4o">chatgpt-4o</option>
+                        <option value="chatgpt4">chatgpt-4</option>
+                        <option value="chatgpto1mini">chatgpt-o1-mini</option>
+                        <option value="chatgpto1">chatgpt-o1</option>
+                        <option value="chatgpto3mini">chatgpt-o3-mini</option>
+                        <option value="chatgpt4.5">chatgpt-4.5</option>
+                    </select>
+                    <button type="button" class="btn btn-warning btn-sm me-2" onclick="generateAnalysis('content', 'answer', '#analysis')">生成解析</button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="togglePromptBox()">自定义Prompt</button>（暂不支持图片识别）
+                </div>
+                <!-- 添加悬浮框 -->
+                <div id="promptOverlay" class="prompt-overlay">
+                    <div class="prompt-box">
+                        <div class="prompt-header">
+                            <h5>自定义解析提示词</h5>
+                            <button type="button" class="btn-close" onclick="togglePromptBox()"></button>
+                        </div>
+                        <textarea id="customPrompt" class="form-control prompt-textarea">请你根据题目和答案生成HTML格式的解析，返回结果时不需要加任何的提示语，以“【解析(GPT)】”开头，注意以内联形式设置style样式，不要用css类。为了节省token，请让HTML语句尽量清晰精简，不必设置过多的样式，对于结构化的步骤可用表格展示。以下是题目和答案。</textarea>
+                        <div class="prompt-footer">
+                            <button type="button" class="btn btn-primary btn-sm" onclick="togglePromptBox()">确认</button>
+                        </div>
+                    </div>
+                </div>
+                <textarea class="form-control" id="analysis" name="analysis"></textarea>
+            </div>
+    
+            <div class="mb-3">
+                <label for="description" class="form-label">描述</label>
+                <textarea class="form-control" id="description" name="description"></textarea>
+            </div>
+    
+            <div class="text-center mt-4">
+                <button type="submit" class="btn btn-primary">提交</button>
+            </div>
+        </form>
+    </div>
+    
+    <script>
+        // 随机生成16位的图片名字函数
+        function generateRandomString(length) {
+            const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+            let result = '';
+            for (let i = 0; i < length; i++) {
+                result += characters.charAt(Math.floor(Math.random() * characters.length));
+            }
+            return result;
+        }
+    
+        // 提交表单时处理
+        document.getElementById('addQuestionForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+    
+            const sourceValue = document.getElementById('source').value;
+            const formData = new FormData(this);
+    
+            // 将表单内所有文本框和文本域内容加入FormData
+            const textInputs = this.querySelectorAll('input[type="text"], textarea');
+            textInputs.forEach(input => {
+                formData.append(input.name, input.value);
+            });
+    
+            // 处理图片文件（如果存在）
+            const fileInputs = this.querySelectorAll('input[type="file"]');
+            fileInputs.forEach(input => {
+                if (input.files[0]) {
+                    const newFileName = generateRandomString(16) + '.' + input.files[0].name.split('.').pop();
+                    formData.append(input.name, input.files[0], newFileName);
+                }
+            });
+    
+            fetch('/api/questions', {
+                    method: 'POST',
+                    body: formData,
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        if (data.similar_questions) {
+                            alert('题目相似！相似题ID: ' + data.similar_questions);
+                        } else {
+                            alert('Error adding question: ' + data.error);
+                        }
+                    } else {
+                        alert('添加成功！');
+                    }
+                    sessionStorage.setItem('sourceValue', sourceValue);
+                    window.location.reload();
+                })
+                .catch((error) => {
+                    console.error('Error:', error);
+                    alert('Error adding question');
+                });
+        });
+    
+        // 页面加载后恢复“来源”字段的值
+        document.addEventListener('DOMContentLoaded', function() {
+            const savedSourceValue = sessionStorage.getItem('sourceValue');
+            if (savedSourceValue) {
+                document.getElementById('source').value = savedSourceValue;
+                sessionStorage.removeItem('sourceValue');
+            }
+        });
+    
+        // 负责知识点点击选择：点击后切换样式并更新隐藏字段的值
+        function toggleKnowledgePoint(element) {
+            const knowledgeInput = document.getElementById('knowledgePoint');
+            const selectedKnowledge = element.dataset.knowledge;
+    
+            let currentKnowledge = knowledgeInput.value ? knowledgeInput.value.split('|') : [];
+    
+            if (currentKnowledge.includes(selectedKnowledge)) {
+                // 已选择，则取消选择
+                currentKnowledge = currentKnowledge.filter(k => k !== selectedKnowledge);
+                $(element).removeClass('bg-info').addClass('bg-secondary');
+            } else {
+                // 未选择，则加入
+                currentKnowledge.push(selectedKnowledge);
+                $(element).removeClass('bg-secondary').addClass('bg-info');
+            }
+    
+            knowledgeInput.value = currentKnowledge.join('|');
+        }
+    
+        // 知识点菜单通过AJAX加载
+        $(document).ready(function() {
+            $.ajax({
+                url: '/api/knowledgepoints',
+                type: 'GET',
+                success: function(modules) {
+                    // 添加“添加知识点”的表单（可选）
+                    var formHtml = '<div style="display: flex; align-items: center;">' +
+                        '<form id="add-knowledgepoint-form">' +
+                        '<input type="text" class="form-control" id="newModule" name="module" placeholder="模块" style="width: 150px; margin-right: 10px;">' +
+                        '<input type="text" class="form-control" id="newKnowledgePoint" name="knowledgepoint" placeholder="知识点" style="width: 150px; margin-right: 10px;">' +
+                        '<button type="submit" class="btn btn-primary">添加</button>' +
+                        '</form>' +
+                        '</div>';
+                    $('#knowledge-points').append(formHtml);
+    
+                    var bgClasses = ['bg-primary', 'bg-warning', 'bg-success'];
+                    modules.forEach(function(module, index) {
+                        var bgClass = bgClasses[index % bgClasses.length];
+                        $('#knowledge-points').append('<p class="badge ' + bgClass + ' m-1">' + module.module + '</p>');
+                        module.knowledgepoints.forEach(function(kp) {
+                            $('#knowledge-points').append('<span class="badge bg-secondary m-1 knowledge-tag" data-knowledge="' + kp.knowledgepoint + '" onclick="toggleKnowledgePoint(this)">' + kp.knowledgepoint + '</span>');
+                        });
+                        $('#knowledge-points').append('<br>');
+                    });
+                    // 最后添加一个隐藏的输入框，保存最终选中的知识点
+                    $('#knowledge-points').append('<input type="text" class="form-control" id="knowledgePoint" name="knowledge_point" hidden>');
+    
+                    // 处理添加新知识点表单提交
+                    $('#add-knowledgepoint-form').submit(function(event) {
+                        event.preventDefault();
+    
+                        var newModule = $('#newModule').val().trim();
+                        var newKnowledgePoint = $('#newKnowledgePoint').val().trim();
+    
+                        if (newModule && newKnowledgePoint) {
+                            $.ajax({
+                                url: '/api/add_knowledgepoint',
+                                type: 'POST',
+                                contentType: 'application/json',
+                                data: JSON.stringify({
+                                    module: newModule,
+                                    knowledgepoint: newKnowledgePoint
+                                }),
+                                success: function(response) {
+                                    alert('知识点添加成功');
+                                    window.location.reload();
+                                },
+                                error: function(response) {
+                                    alert('添加知识点失败: ' + response.responseText);
+                                }
+                            });
+                        } else {
+                            alert('请填写完整的模块和知识点');
+                        }
+                    });
+                },
+                error: function(error) {
+                    console.log(error);
+                }
+            });
+        });
+        // 控制悬浮框显示的函数
+        function togglePromptBox() {
+            const overlay = document.getElementById('promptOverlay');
+            overlay.style.display = overlay.style.display === 'flex' ? 'none' : 'flex';
+        }
+        // 点击外部关闭悬浮框
+        document.getElementById('promptOverlay').addEventListener('click', function(e) {
+            if (e.target === this) {
+                togglePromptBox();
+            }
+        });
+        //GPT解析生成
+        // 实现带有超时功能的 fetch
+        function fetchWithTimeout(url, options, timeout = 600000) { // 默认超时60秒
+            return new Promise((resolve, reject) => {
+                const timer = setTimeout(() => {
+                    reject(new Error('请求超时，请稍后重试。'));
+                }, timeout);
+        
+                fetch(url, options)
+                    .then(response => {
+                        clearTimeout(timer);
+                        resolve(response);
+                    })
+                    .catch(err => {
+                        clearTimeout(timer);
+                        reject(err);
+                    });
+            });
+        }
+        function generateAnalysis(contentbox, answerbox, resbox) {
+            const content = document.getElementById(contentbox).value;
+            const answer = document.getElementById(answerbox).value;
+            const mode = document.getElementById("analysisMode").value;
+            const customPrompt = document.getElementById("customPrompt").value;  // 获取自定义prompt
+            
+            if (content.trim() === '') {
+                alert('题目为空');
+                return;
+            }
+            if (answer.trim() === '') {
+                const userConfirmed = confirm('答案为空可能会导致正确性不足，确定吗？');
+                if (!userConfirmed) {
+                    return;
+                }
+            }
+            $(resbox).summernote('code', '生成中...');
+            fetchWithTimeout(`/generate_analysis/${mode}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    content,
+                    answer,
+                    prompt: customPrompt
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    console.error('Error:', data.error);
+                } else {
+                    $(resbox).summernote('code', data.analysis);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
+    
+        function html_format(obj) {
+            var content = $(obj).summernote('code');
+            $(obj).summernote('code', '整理中...');
+            fetch(`/html_format`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ content })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        console.error('Error:', data.error);
+                    } else {
+                        $(obj).summernote('code', data.result);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+        }
+    
+        function choose_format(obj) {
+            var content = $(obj).summernote('code');
+            $(obj).summernote('code', '整理中...');
+            fetch(`/choose_format`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ content })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        console.error('Error:', data.error);
+                    } else {
+                        $(obj).summernote('code', data.result);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+        }
+        // 难易度说明弹窗
+        function openPopup(x) {
+            if (x == 0)
+                alert("难易度等级1-5级：\n  1级：单纯的知识性考察\n  2级：日常的应用，初步的理解，简单的逻辑\n  3级：稍复杂的逻辑，原理性的理解\n  4级：对解决生活中一般问题能力的考察，或较强逻辑推演能力的考察\n  5级：对解决生活中复杂问题能力的考察，考察形式多样化，需极强的信息意识与逻辑能力，一般为python压轴大题。\n");
+            else if (x == 1)
+                alert("1.搜索支持正则表达式\n2.此项搜索范围包括题目文本、答案、解析");
+        }
+        // 初始化Summernote编辑器
+        $(document).ready(function() {
+            function initializeSummernote(selector) {
+                $(selector).summernote({
+                    tabDisable: true,
+                    fontNames: ['宋体', 'Times New Roman', '黑体', '仿宋', '楷体', '微软雅黑'],
+                    fontNamesIgnoreCheck: ['楷体'],
+                    toolbar: [
+                        ['style', ['style']],
+                        ['font', ['bold', 'italic', 'underline', 'clear','borderedText','markText']],
+                        ['fontname', ['fontname']],
+                        ['color', ['color']],
+                        ['para', ['ul', 'ol', 'paragraph']],
+                        ['height', ['height']],
+                        ['table', ['table']],
+                        ['insert', ['link', 'picture', 'video']],
+                        ['view', ['fullscreen', 'codeview', 'help']]
+                    ],
+                    buttons: {
+                        borderedText: function(context) {
+                            var ui = $.summernote.ui;
+                            return ui.button({
+                                contents: '▣',
+                                tooltip: '字体边框',
+                                click: function() {
+                                    var selectedText = window.getSelection().toString();
+                                    if (selectedText) {
+                                        context.invoke('editor.pasteHTML', '<span style="border:solid windowtext 1.0pt">' + selectedText + '</span>');
+                                    } else {
+                                        alert("请先选择要应用边框的文本");
+                                    }
+                                }
+                            }).render();
+                        },
+                        markText: function(context) {
+                            var ui = $.summernote.ui;
+                            return ui.button({
+                                contents: '·',
+                                tooltip: '着重号',
+                                click: function() {
+                                    var selectedText = window.getSelection().toString();
+                                    if (selectedText) {
+                                        context.invoke('editor.pasteHTML', '<span style="display: inline-block; position: relative;">'+selectedText+'<span style="position: absolute; left: 50%; bottom: -5px; width: 4px; height: 4px; background-color: black; border-radius: 50%; transform: translateX(-50%);"></span></span>');
+                                    } else {
+                                        alert("请先选择要应用着重号的文本");
+                                    }
+                                }
+                            }).render();
+                        }
+                    },
+                    callbacks: {
+                        onImageUpload: function(files) {
+                            var data = new FormData();
+                            data.append('file', files[0]);
+                            $.ajax({
+                                url: '/upload_image',
+                                method: 'POST',
+                                data: data,
+                                processData: false,
+                                contentType: false,
+                                success: function(response) {
+                                    var imageUrl = response.url;
+                                    if (imageUrl) {
+                                        $(selector).summernote('insertImage', imageUrl);
+                                    } else {
+                                        console.error('URL 格式错误', response);
+                                    }
+                                },
+                                error: function(err) {
+                                    console.error('图片上传失败', err);
+                                }
+                            });
+                        }
+                    },
+                    height: 300,
+                    minHeight: null,
+                    maxHeight: null,
+                });
+            }
+        
+            // 初始化多个编辑器
+            initializeSummernote('#content');
+            initializeSummernote('#analysis');
+            initializeSummernote('#editContent');
+            initializeSummernote('#editAnalysis');
+        });
+    </script>
+    <script src="{{ url_for('static', filename='js/4.5.2/bootstrap.bundle.min.js') }}"></script>
+    <link href="{{ url_for('static', filename='css/summernote-bs5.min.css') }}" rel="stylesheet">
+    <script src="{{ url_for('static', filename='js/summernote-bs5.min.js') }}"></script>
+    
+    {% endblock %}
+</body>
+
+</html>

@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>试卷统计</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/5.2.3/bootstrap.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/detail.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/font/Roboto:wght') }}">
+    <script src="{{ url_for('static', filename='js/chart.js') }}"></script>
+
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Roboto', sans-serif;
+        }
+
+        h1,
+        h2 {
+            text-align: center;
+            margin-top: 20px;
+            font-weight: 500;
+        }
+
+        .card {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            border: none;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        .sortable-user,
+        .sortable-question {
+            cursor: pointer;
+            position: relative;
+            transition: color 0.3s;
+        }
+
+        .sortable-user:hover,
+        .sortable-question:hover {
+            color: #007bff;
+        }
+
+        .sortable-user::after,
+        .sortable-question::after {
+            content: ' ▼';
+            font-size: 0.8em;
+            display: none;
+            position: absolute;
+            right: 8px;
+            transition: transform 0.3s;
+        }
+
+        .sortable-user.sorted-asc::after,
+        .sortable-question.sorted-asc::after {
+            content: ' ▼';
+            display: inline;
+            transform: rotate(180deg);
+        }
+
+        .sortable-user.sorted-desc::after,
+        .sortable-question.sorted-desc::after {
+            content: ' ▲';
+            display: inline;
+        }
+
+        .sortable-user:hover::after,
+        .sortable-question:hover::after {
+            display: inline;
+        }
+
+        .form-group {
+            max-width: 300px;
+            margin: 0 auto;
+        }
+
+        table {
+            margin-top: 20px;
+            transition: all 0.3s ease;
+        }
+
+        th {
+            text-align: center;
+        }
+
+        #userScoresTable td {
+            text-align: center;
+        }
+
+        .answer-cell {
+            background-color: #e9f7ef;
+            border-radius: 5px;
+            padding: 10px;
+        }
+
+        .analysis-cell {
+            background-color: #fef9e7;
+            border-radius: 5px;
+            padding: 10px;
+        }
+
+        .collapse {
+            display: none;
+        }
+
+        .collapse.show {
+            display: table-row;
+        }
+
+        .question-header {
+            cursor: pointer;
+        }
+
+        .progress-bar {
+            height: 24px;
+            background-color: #007bff;
+            transition: width 0.6s ease;
+        }
+
+        .progress {
+            background-color: #e9ecef;
+            border-radius: 5px;
+            height: 24px;
+            margin-bottom: 16px;
+        }
+        .badge.bg-secondary {
+            background-color: #6c757d;
+            color: white;
+            padding: 0.5em 0.75em;
+            border-radius: 0.25rem;
+            font-size: 0.9em;
+        }
+        .badge.bg-secondary:hover {
+            background-color: #5a6268;
+        }
+        .d-flex.flex-wrap .badge {
+            font-size: 0.9em;
+        }
+        .modal-body h5 {
+            margin-top: 10px;
+            margin-bottom: 10px;
+        }
+        .floating-nav {
+            position: fixed;
+            top: 50%;       /* 垂直居中，可根据需要微调 */
+            transform: translateY(-50%);
+            left: 20px;    /* 距离右边 20 像素 */
+            z-index: 999;   /* 保证在其他元素之上 */
+        }
+        
+        .floating-nav .btn {
+            width: 100px;   /* 给按钮一个固定宽度 */
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+
+<body>
+    {% extends 'header.html' %}
+    {% block content %}
+    <div class="container">
+        <!-- 显示错误同学的模态框 -->
+        <div class="modal fade" id="wrongUsersModal" tabindex="-1" aria-labelledby="wrongUsersModalLabel" aria-hidden="true" style="margin-top:60px">
+          <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="wrongUsersModalLabel">选项情况</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="关闭"></button>
+              </div>
+              <div class="modal-body">
+                <div id="wrongUsersContainer"></div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+
+        <h1 class="my-4">试卷统计</h1>
+        
+        <!-- 悬浮导航锚点面板 -->
+        <div class="floating-nav">
+          <a href="#examSummary" class="btn btn-secondary d-block mb-2">查看柱形图</a>
+          <a href="#classFilter" class="btn btn-secondary d-block mb-2">学生分数表</a>
+          <a href="#questionStatsTable" class="btn btn-secondary d-block">题目表</a>
+        </div>
+
+
+        <div class="card">
+            <div class="card-body" id="examSummary">
+                <h2>总体统计</h2>
+                <ul>
+                    <li>最高分：<span id="highestScore"></span></li>
+                    <li>最低分：<span id="lowestScore"></span></li>
+                    <li>平均分：<span id="averageScore"></span></li>
+                </ul>
+                <canvas id="scoreDistributionChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <select class="form-select" id="classFilter">
+                <option value="">所有班级</option>
+            </select>
+        </div>
+        <div class="card">
+            <div class="card-body">
+                <table class="table table-striped table-bordered" id="userScoresTable">
+                    <thead class="table-dark">
+                        <tr>
+                            <th class="sortable-user" data-sort="username">用户名</th>
+                            <th class="sortable-user" data-sort="usernick">昵称</th>
+                            <th class="sortable-user" data-sort="class_name">班级</th>
+                            <th class="sortable-user" data-sort="highest_score">最高分</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+        <h2>题目统计</h2>
+        <div class="card">
+            <div class="card-body">
+                <table class="table table-striped table-bordered" id="questionStatsTable">
+                    <!-- 在表头添加新的列 -->
+                    <thead class="thead-dark">
+                        <tr>
+                            <th>题目内容</th>
+                            <th>做题次数</th>
+                            <th>正确次数</th>
+                            <th class="sortable-question" data-sort="correct_rate">正确率(%)</th>
+                            <th>操作</th> <!-- 新增操作列 -->
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            var examId = window.location.pathname.split('/').pop();
+            var userRole;
+            var questionStatsData = [];
+    
+            // 获取当前用户角色
+            $.getJSON('/current_user_role', function(data) {
+                userRole = data;
+    
+                // 获取统计数据
+                $.getJSON('/exam_statistics/' + examId)
+                    .done(function(data) {
+                        questionStatsData = data.question_stats_list;
+    
+                        populateTables(data, userRole);
+                        populateOverallStats(data.overall_stats);
+    
+                        // 动态生成班级筛选下拉框
+                        var classFilter = $('#classFilter');
+                        var classSet = new Set();
+                        $.each(data.user_scores, function(index, userScore) {
+                            classSet.add(userScore.class_name);
+                        });
+    
+                        classSet.forEach(function(className) {
+                            classFilter.append('<option value="' + className + '">' + className + '</option>');
+                        });
+                    })
+                    .fail(function(jqxhr, textStatus, error) {
+                        var err = textStatus + ", " + error;
+                        console.error("Request Failed: " + err);
+                        alert("Request Failed: " + err);
+                    });
+            });
+    
+            // 监听班级筛选
+            $('#classFilter').change(function() {
+                var selectedClass = $(this).val();
+                filterTables(selectedClass);
+            });
+    
+            // 可排序列
+            $('.sortable-question').click(function() {
+                var sortField = $(this).data('sort');
+                var sorted = $(this).hasClass('sorted-asc') ? 'desc' : 'asc';
+                sortQuestionTable(sortField, sorted);
+                // 切换箭头样式
+                $('.sortable-question').removeClass('sorted-asc sorted-desc');
+                $(this).addClass('sorted-' + sorted);
+            });
+            
+            function populateOverallStats(stats) {
+                console.log('Overall Stats to Update:', stats); // 调试输出
+                $('#highestScore').text(stats.highest_score);
+                $('#lowestScore').text(stats.lowest_score);
+                $('#averageScore').text(stats.average_score.toFixed(2));
+                renderScoreDistributionChart(stats.score_distribution);
+            }
+            
+            var scoreDistributionChart; // 用于存储图表实例
+    
+            function renderScoreDistributionChart(distribution) {
+                var ctx = document.getElementById('scoreDistributionChart').getContext('2d');
+            
+                // 若已有图表实例，先销毁
+                if (scoreDistributionChart) {
+                    scoreDistributionChart.destroy();
+                }
+            
+                scoreDistributionChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['0-29', '30-39', '40-49', '50-59', '60-69', '70-79', '80-89', '90-100'],
+                        datasets: [{
+                            label: '人数',
+                            data: [
+                                distribution['0-29'],
+                                distribution['30-39'],
+                                distribution['40-49'],
+                                distribution['50-59'],
+                                distribution['60-69'],
+                                distribution['70-79'],
+                                distribution['80-89'],
+                                distribution['90-100']
+                            ],
+                            backgroundColor: 'rgba(54, 162, 235, 0.7)',
+                            borderColor: 'rgba(54, 162, 235, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: '人数'
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+    
+            // 填充用户成绩和题目表
+            function populateTables(data, role) {
+                // 1. 用户成绩表
+                var userScoresTableBody = $('#userScoresTable tbody');
+                userScoresTableBody.empty();
+                $.each(data.user_scores, function(index, userScore) {
+                    var row = $('<tr></tr>');
+                    row.append('<td>' + userScore.username + '</td>');
+                    row.append('<td>' + userScore.usernick + '</td>');
+                    row.append('<td>' + userScore.class_name + '</td>');
+                    var score = userScore.highest_score === '未参加' ? '未参加' : userScore.highest_score;
+                    row.append('<td><a href>' + score + '</a></td>');
+                    
+userScoresTableBody.append(row);
+                });
+    
+                // 2. 题目统计表
+                renderQuestionStatsTable(data.question_stats_list, role);
+            }
+    
+            // 渲染题目统计表
+            function renderQuestionStatsTable(questionStatsList, role) {
+                var questionStatsTableBody = $('#questionStatsTable tbody');
+                questionStatsTableBody.empty();
+            
+                $.each(questionStatsList, function(index, item) {
+                    var question_id = item.question_id;
+                    var row = $('<tr></tr>');
+                    row.data('question-id', question_id);
+                    
+                    row.append('<td>' + item.content.split('\n')[0] + '</td>');
+                    row.append('<td>' + item.attempts + '</td>');
+                    row.append('<td>' + item.correct_answers + '</td>');
+                    
+                    var correctRateCell = $('<td>' + item.correct_rate.toFixed(2) + '</td>');
+                    if (item.attempts > 1) {
+                        correctRateCell.css('background-color', getColorForPercentage(item.correct_rate / 100));
+                    }
+                    row.append(correctRateCell);
+                    
+                    // 详情行
+                    if (role !== 'student') {
+                        // 添加操作按钮
+                        var actionCell = $('<td></td>');
+                        
+                        // 1) 查看做错同学 按钮
+                        var viewWrongBtn = $('<button class="btn btn-sm btn-danger view-wrong-btn me-1">做题情况</button><div><br></div>');
+                        viewWrongBtn.data('question-id', question_id);
+                        actionCell.append(viewWrongBtn);
+                        
+                        // 2) 查看/隐藏 解析 按钮
+                        var toggleAnalysisBtn = $(
+                          '<button class="btn btn-sm btn-info" ' +
+                          'data-bs-toggle="collapse" data-bs-target="#collapse-' + question_id + '">' + '查看解析</button>'
+                        );
+                        actionCell.append(toggleAnalysisBtn);
+                        
+                        row.append(actionCell);
+                    }
+                    questionStatsTableBody.append(row);
+                    
+                    // 详情行
+                    if (role !== 'student') {
+                        var detailRow = $(
+                          '<tr id="collapse-' + question_id + '" class="collapse"></tr>'
+                        );
+                        detailRow.append(
+                            '<td colspan="5">' +
+                                '<div class="answer-cell">答案: ' + item.answer + '</div>' +
+                                '<div class="analysis-cell">' + (item.analysis ? item.analysis : '暂无解析') + '</div>' +
+                                '<div class="progress"><div class="progress-bar" style="width: ' + item.correct_rate + '%;"></div></div>' +
+                            '</td>'
+                        );
+                        questionStatsTableBody.append(detailRow);
+                    }
+                });
+                
+                // 绑定点击事件
+                $('.view-wrong-btn').click(function(event) {
+                    event.stopPropagation(); // 防止触发行的展开/收起
+                    var questionId = $(this).data('question-id');
+                    fetchAndDisplayWrongUsers(questionId);
+                });
+            }
+    
+            // 班级筛选后重新获取数据
+            function filterTables(selectedClass) {
+                $.getJSON('/exam_statistics/' + examId + '?class=' + selectedClass)
+                    .done(function(data) {
+                        console.log('Filtered data:', data);
+                        questionStatsData = data.question_stats_list;
+                        populateTables(data, userRole);
+                        populateOverallStats(data.overall_stats);
+                    })
+                    .fail(function(jqxhr, textStatus, error) {
+                        var err = textStatus + ", " + error;
+                        console.error("Request Failed: " + err);
+                        alert("Request Failed: " + err);
+                    });
+            }
+    
+            // 排序题目表
+            function sortQuestionTable(field, order) {
+                questionStatsData.sort(function(a, b) {
+                    var valueA = a[field];
+                    var valueB = b[field];
+    
+                    if (order === 'asc') {
+                        return valueA < valueB ? -1 : (valueA > valueB ? 1 : 0);
+                    } else {
+                        return valueA > valueB ? -1 : (valueA < valueB ? 1 : 0);
+                    }
+                });
+    
+                renderQuestionStatsTable(questionStatsData, userRole);
+            }
+    
+            function getColorForPercentage(pct) {
+                var percentColors = [
+                    { pct: 0.0, color: { r: 255, g: 0,   b: 0   } },
+                    { pct: 0.5, color: { r: 255, g: 255, b: 0   } },
+                    { pct: 1.0, color: { r: 0,   g: 128, b: 0   } }
+                ];
+                var i;
+                for (i = 1; i < percentColors.length - 1; i++) {
+                    if (pct < percentColors[i].pct) {
+                        break;
+                    }
+                }
+                var lower = percentColors[i - 1];
+                var upper = percentColors[i];
+                var range = upper.pct - lower.pct;
+                var rangePct = (pct - lower.pct) / range;
+                var pctLower = 1 - rangePct;
+                var pctUpper = rangePct;
+                var color = {
+                    r: Math.floor(lower.color.r * pctLower + upper.color.r * pctUpper),
+                    g: Math.floor(lower.color.g * pctLower + upper.color.g * pctUpper),
+                    b: Math.floor(lower.color.b * pctLower + upper.color.b * pctUpper)
+                };
+                return 'rgb(' + [color.r, color.g, color.b].join(',') + ')';
+            }
+            
+            function fetchAndDisplayWrongUsers(questionId) {
+                var examId = window.location.pathname.split('/').pop();
+                var selectedClass = $('#classFilter').val();
+            
+                // 构建请求URL
+                var url = '/exam_statistics/' + examId + '/question/' + questionId + '/wrong_users';
+                if (selectedClass) {
+                    url += '?class=' + encodeURIComponent(selectedClass);
+                }
+            
+                // 发送AJAX请求
+                $.getJSON(url)
+                    .done(function(data) {
+                        var wrongUsersContainer = $('#wrongUsersContainer');
+                        wrongUsersContainer.empty();
+                        
+                        var groups = data.groups;
+                        var correctAnswer = data.correct_answer;
+                        
+                        var optionOrder = ['A', 'B', 'C', 'D', 'Other'];
+                        
+                        optionOrder.forEach(function(option) {
+                            if (1) {
+                                var isCorrectGroup = (option === correctAnswer);
+                        
+                                // 分类标题
+                                var categoryTitle = $('<h5></h5>').text(option + ' 选项');
+                                if (isCorrectGroup) {
+                                    categoryTitle.css('color', 'green');
+                                }
+                                wrongUsersContainer.append(categoryTitle);
+                        
+                                // 放用户昵称的行
+                                var nicknamesRow = $('<div class="d-flex flex-wrap mb-3"></div>');
+                        
+                                // 获取 examId，用于拼接链接
+                                var examId = window.location.pathname.split('/').pop();
+                        
+                                groups[option].forEach(function(user) {
+                                    // 假设后端返回 user.user_id
+                                    var userId = user.user_id; 
+                                    var usernick = user.usernick; 
+                        
+                                    // 拼接链接 => /user_exam_results/<examId>?user_id=<userId>
+                                    var detailLink = '/user_exam_results/' + examId + '?user_id=' + userId;
+                        
+                                    // 用 <a> 来包裹昵称，并让它在新标签页打开
+                                    var nicknameBadge = $('<a></a>')
+                                        .addClass('badge bg-secondary me-2 mb-2')
+                                        .attr('href', detailLink)
+                                        .attr('target', '_blank') // 在新标签页打开，可选
+                                        .text(usernick);
+                        
+                                    nicknamesRow.append(nicknameBadge);
+                                });
+                        
+                                wrongUsersContainer.append(nicknamesRow);
+                            }
+                        });
+
+                        // 设置模态框标题
+                        $('#wrongUsersModalLabel').text('选项情况');
+    
+                        // 显示模态框
+                        var wrongUsersModal = new bootstrap.Modal(document.getElementById('wrongUsersModal'), {
+                            keyboard: false
+                        });
+                        wrongUsersModal.show();
+                    })
+                    .fail(function(jqxhr, textStatus, error) {
+                        var err = textStatus + ", " + error;
+                        console.error("Request Failed: " + err);
+                        alert("权限不足: " + err);
+                    });
+            }
+            
+            // 辅助函数：获取题目序号
+            function getQuestionNumber(questionId) {
+                var question = questionStatsData.find(q => q.question_id === questionId);
+                if (question) {
+                    var match = question.content.match(/第(\d+)题/);
+                    if (match) {
+                        return match[1];
+                    }
+                }
+                return questionId;
+            }
+        });
+    </script>
+
+    {% endblock %}
+</body>
+
+
+</html>

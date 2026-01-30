@@ -1,0 +1,1482 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <link rel="icon" href="/static/favicon.ico" type="image/x-icon">
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <script src="{{ url_for('static', filename='js/Sortable/1.14.0/Sortable.min.js') }}"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>题库管理系统</title>
+    <script src="{{ url_for('static', filename='js/marked.min.js') }}"></script>
+    <style>
+        .borderedcontent {
+            border: 1px solid black; /* 边框颜色和粗细 */
+            display: inline-block; /* 确保边框包裹文本 */
+        }
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+
+        .d-flex {
+            display: flex;
+        }
+
+        .justify-content-between {
+            justify-content: space-between;
+        }
+
+        .flex-fill {
+            flex: 1;
+        }
+
+        .box {
+            border: 2px solid #4CAF50;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+            background-size: 20px 20px;
+            background-position: 0 0, 10px 10px;
+        }
+
+        a {
+            color: #4CAF50;
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        .highlighted {
+            background-color: #39C5BB;
+        }
+
+        .large-checkbox {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        .loading {
+            text-align: center;
+            font-size: 18px;
+            margin-top: 20px;
+            color: #4CAF50;
+            /* 设置颜色 */
+            font-weight: bold;
+            /* 设置字体加粗 */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            /* 图标和文字之间的间距 */
+        }
+
+        .loading::before {
+            content: "";
+            width: 24px;
+            height: 24px;
+            border: 3px solid #4CAF50;
+            /* 设置加载圆圈颜色 */
+            border-top-color: transparent;
+            /* 顶部边框透明 */
+            border-radius: 50%;
+            /* 设置为圆形 */
+            animation: spin 1s linear infinite;
+            /* 加入旋转动画 */
+        }
+
+        /* 旋转动画 */
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .modal-img {
+            max-width: 100px;
+            margin: auto;
+        }
+
+        .single-line {
+            text-overflow: ellipsis;
+            overflow: hidden;
+            white-space: nowrap;
+            max-width: 100px;
+        }
+
+        .preserve-spaces {
+            white-space: pre-wrap;
+        }
+
+        #to-bottom-button,
+        #to-top-button {
+            width: 50px;
+            height: 50px;
+            text-align: center;
+            line-height: 50px;
+            border-radius: 50%;
+            background-color: #f0f0f0;
+            color: #333;
+            text-decoration: none;
+            font-size: 24px;
+        }
+
+        #to-bottom-button {
+            position: fixed;
+            right: 0px;
+            top: 70px;
+        }
+
+        #to-top-button {
+            position: fixed;
+            right: 0px;
+            bottom: 60px;
+        }
+
+        #fixedContainer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background-color: rgba(255, 255, 255, 0.9);
+            z-index: 1000;
+            padding: 10px;
+            box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1);
+            font-size: 16px;
+        }
+
+        #selectedQuestionTags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            /* 标签间距 */
+            max-width: 80%;
+            /* 防止占满整个容器 */
+            overflow: hidden;
+        }
+
+        .question-tag {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 8px;
+            background-color: #f0f0f0;
+            border-radius: 4px;
+            font-size: 14px;
+            position: relative;
+        }
+
+        .tooltip {
+            position: absolute;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            border-radius: 5px;
+            width: 800px;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .question-tag button {
+            margin-left: 5px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: red;
+        }
+
+
+        .form-control {
+            width: 90%;
+            margin: auto;
+        }
+
+        .highlighted-content {
+            overflow-x: auto;
+            /* 水平滚动条，保持表格宽度一致 */
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+
+        .border {
+            margin-bottom: 10px;
+        }
+
+        /* 辅助信息样式 */
+        .sub-info {
+            font-size: 0.9em;
+            color: #888888;
+            margin-top: 3px;
+            line-height: 1.4;
+        }
+    </style>
+</head>
+
+<body>
+
+    {% extends 'header.html' %}
+    {% block content %}
+
+    <!-- 输入题目清单的模态框，用于用户输入考试名称、时长、题目数量等信息 -->
+    <div class="modal fade" id="downloadModal" tabindex="-1" role="dialog" aria-labelledby="downloadModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="downloadModalLabel">输入题目清单名称</h5>
+                    <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <!-- 用户可以在这里输入题目清单的名称和考试的相关配置 -->
+                    <input type="text" class="form-control" id="listNameInput" placeholder="题目清单名称">
+                    <input type="number" class="form-control" id="durationInput" placeholder="考试时长（分钟）">
+                    <input type="number" class="form-control" id="numQuestionsInput" placeholder="题目数量">
+                    <input type="number" class="form-control" id="scorePerQuestionInput" placeholder="每道题分数">
+                    <select class="form-control" id="classSelect" multiple>
+                        <!-- 动态加载班级选项 -->
+                    </select>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" id="confirmDownload">下载</button>
+                    <button type="button" class="btn btn-info" id="create_exam">组卷</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 模态框，用于显示题目的详细信息 -->
+    <div class="modal fade" id="questionDetailModal" tabindex="-1" aria-labelledby="questionDetailModalLabel" aria-hidden="true" style="margin-top:30px">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="questionDetailModalLabel">题目详情（按ESC退出）</h5>
+                    <button type="button" class="btn-close" data-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- 模态框中包含题目的各个属性，如内容、知识点、描述、难度等 -->
+                    <p>
+                        <strong>内容：</strong>
+                    <div class="highlighted-content-model"><span id="modalContent"></span></div>
+                    </p>
+                    <p><strong>知识点：</strong>
+                    <div class="border p-3 rounded bg-light">
+                        <span id="modalKnowledgePoint"></span>
+                    </div>
+                    </p>
+                    <p>
+                        <strong>描述：</strong> <!-- 新增描述字段 -->
+                    <div class="border p-3 rounded bg-light">
+                        <span id="modalDescription"></span>
+                    </div>
+                    </p>
+                    <p>
+                        <strong>难易度：</strong>
+                    <div class="border p-3 rounded bg-light">
+                        <span id="modalDifficulty"></span>
+                    </div>
+                    </p>
+                    <p>
+                        <strong>来源：</strong>
+                    <div class="border p-3 rounded bg-light">
+                        <span id="modalSource"></span>
+                    </div>
+                    </p>
+                    <p>
+                        <strong>答案：</strong>
+                    <div class="border p-3 rounded bg-light">
+                        <span id="modalAnswer"></span>
+                    </div>
+                    </p>
+                    <p>
+                        <strong>解析：</strong>
+                    <div>
+                        <span id="modalAnalysis"></span>
+                    </div>
+                    </p>
+                    <p>
+                        <strong>更新时间：</strong>
+                    <div class="border p-3 rounded bg-light">
+                        <span id="modalUpdatedAt"></span>
+                    </div>
+                    </p>
+                    <p>
+                        <strong>添加人：</strong>
+                        <span id="modalAddedBy"></span>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 编辑题目的模态框 -->
+    <div class="modal fade" id="editQuestionModal" tabindex="-1" aria-labelledby="editQuestionModalLabel" aria-hidden="true" style="margin-top:30px">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editQuestionModalLabel">修改题目</h5>
+                    <button type="button" class="btn-close" data-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editQuestionForm">
+
+                        <!-- 编辑表单，提交按钮位于顶部和底部 -->
+                        <button type="submit" class="btn btn-primary mb-3">提交修改</button>
+
+                        <!-- 题目内容的编辑区，用户可以输入和编辑题目描述 -->
+                        <div class="mb-3">
+                            <label for="editContent" class="form-label">内容</label>
+                            <button type="button" class="btn btn-warning" onclick="html_format('#editContent')">清除格式</button>
+                            <button type="button" class="btn btn-warning" onclick="choose_format('#editContent')">选择题</button>
+                            <textarea style="height:300px" class="form-control" id="editContent" rows="3"></textarea>
+                        </div>
+
+                        <!-- 其他题目属性，如知识点、难易度、来源、答案等字段 -->
+                        <div class="mb-3">
+                            <label for="editknowledgePoint" class="form-label">知识点</label>
+                            <input type="text" class="form-control" id="editknowledgePoint">
+                        </div>
+                        <div class="mb-3">
+                            <label for="editDifficulty" class="form-label">难易度</label>
+                            <input type="number" class="form-control" id="editDifficulty">
+                        </div>
+                        <div class="mb-3">
+                            <label for="editSource" class="form-label">来源</label>
+                            <input type="text" class="form-control" id="editSource">
+                        </div>
+                        <div class="mb-3">
+                            <label for="editAnswer" class="form-label">答案</label>
+                            <textarea type="text" class="form-control" id="editAnswer"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editAnalysis" class="form-label">解析</label>
+                            <button type="button" class="btn btn-warning" onclick="generateAnalysis('editContent', 'editAnswer', '#editAnalysis')">生成解析</button>
+                            <textarea style="height:300px" class="form-control" id="editAnalysis" rows="3"></textarea>
+                            <div style="margin-left: 40px;color: orange;font-size: 14px;">
+                                注：此解析生成功能调用了百度文心一言4.0，老贵了慎用
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editDescription" class="form-label">描述</label>
+                            <textarea type="text" class="form-control" id="editDescription"></textarea>
+                        </div>
+
+                        <!-- 底部提交按钮 -->
+                        <button type="submit" class="btn btn-primary">提交修改</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+    <!-- 页面主体部分，包括搜索条件和分页按钮 -->
+    <div>
+        <!-- 页面顶部的锚点，用于快速定位到页面顶部 -->
+        <div id="top-of-page" style="height: 0;"></div>
+
+        <!-- 题目搜索框和过滤器，包括关键字、知识点、难易度等条件 -->
+        <div class="box">
+            <div class="mb-3">
+                <label for="keyword" class="form-label">
+                    <h5>【关键字】</h5>
+                </label>
+                <input class="form-check-input" type="checkbox" id="exactMatchSwitch">
+
+                <label class="form-check-label" for="exactMatchSwitch">精确查询</label>
+
+                <a href="javascript:void(0);" onclick="openPopup(1)" style="font-size: smaller; color: blue;">说明</a>
+                <input type="text" class="form-control" id="keyword">
+            </div>
+            
+            <!-- ID选择区-->
+            <div class="mb-3">
+                <label for="question_id" class="form-label">
+                    <h5>【题目ID】</h5>
+                </label>
+                <input type="text" class="form-control" id="question_id">
+            </div>
+            
+            <!-- 知识点选择区-->
+            <div class="mb-3">
+                <label for="knowledge-points" class="form-label">
+                    <h5>【知识点】</h5>
+                </label>
+                <div style="width: 90%;margin: auto;" id="knowledge-points">
+                    <!--通过jq渲染知识点，代码在header.html-->
+                </div>
+            </div>
+
+            <!-- 难易度、来源、和题目类型的选择 -->
+            <div class="mb-3 d-flex">
+                <div class="me-2 flex-grow-1">
+                    <label for="difficulty" class="form-label">
+                        <h5>【难易度】<a href="javascript:void(0);" onclick="openPopup(0)" style="font-size: smaller; color: blue;">说明</a></h5>
+                    </label>
+                    <input type="text" class="form-control" id="difficulty">
+                </div>
+                <div class="flex-grow-1">
+                    <label for="source" class="form-label">
+                        <h5>【来源】</h5>
+                    </label>
+                    <input type="text" class="form-control" id="source">
+                </div>
+            </div>
+
+            <!-- 题目类型的复选框，允许用户选择单选题、多选题、填空题等 -->
+            <input class="form-check-input" type="checkbox" id="choiceOnlySwitch">
+            <label class="form-check-label" for="choiceOnlySwitch">选择题</label>
+            <input class="form-check-input" type="checkbox" id="choiceMultiSwitch">
+            <label class="form-check-label" for="choiceMultiSwitch">材料题</label>
+            <input class="form-check-input" type="checkbox" id="fillBlankSwitch">
+            <label class="form-check-label" for="fillBlankSwitch">综合题</label>
+
+            <!-- 分页导航，用户可以跳转到首页、上一页、下一页或末页 -->
+            <div class="mb-3">
+                <input class="form-check-input" type="checkbox" id="myQuestionsSwitch">
+                <label class="form-check-label" for="myQuestionsSwitch">我的题目</label>
+            </div>
+            <!-- 搜索和重置按钮 -->
+            <div class="d-flex justify-content-between">
+                <button class="btn btn-primary" onclick="filterQuestions()">【查询】</button>
+                <button class="btn btn-danger" id="reloadPage" onclick="reloadPage()">重置页面</button>
+            </div>
+
+        </div>
+
+        <br>
+
+        <!-- 固定在页面底部的输入框和操作按钮，用于查看和下载选中的题目 -->
+        <div id="fixedContainer">
+            <span>已选题目：</span>
+            <div id="selectedQuestionTags"></div>
+            <button class="btn btn-warning" id="downloadBtn">下载/组卷</button>
+            <button class="btn btn-danger" id="batchDeleteBtn">批量删除</button>
+
+        </div>
+
+
+        <div id="pagination">
+            <button id="firstPage" class="btn btn-secondary">首页</button>
+            <button id="prevPage" class="btn btn-secondary">上一页</button>
+            <span id="pageInfo"></span>
+            <button id="nextPage" class="btn btn-secondary">下一页</button>
+            <button id="lastPage" class="btn btn-secondary">末页</button>
+            <input type="number" id="pageInput" min="1" style="width: 60px;" placeholder="页码">
+            <button id="goToPage" class="btn btn-primary">跳转</button>
+            <text id="resultCount"></text>
+        </div>
+
+        <!-- 题目表格，显示题目的ID、内容、知识点、难易度等信息 -->
+        <table class="table mt-3">
+            <thead>
+                <tr>
+                    <th><input type="checkbox" id="selectAllCheckbox" class="large-checkbox"></th>
+                    <th>ID</th>
+                    <th>题面</th>
+                </tr>
+            </thead>
+            <tbody id="questionsTable">
+                <tr></tr>
+            </tbody>
+        </table>
+
+        <!-- 分页导航（底部） -->
+        <div id="paginationBottom" style="margin-bottom: 80px;">
+            <button id="firstPageBottom" class="btn btn-secondary">首页</button>
+            <button id="prevPageBottom" class="btn btn-secondary">上一页</button>
+            <span id="pageInfoBottom"></span>
+            <button id="nextPageBottom" class="btn btn-secondary">下一页</button>
+            <button id="lastPageBottom" class="btn btn-secondary">末页</button>
+            <input type="number" id="pageInputBottom" min="1" style="width: 60px;" placeholder="页码">
+            <button id="goToPageBottom" class="btn btn-primary">跳转</button>
+            <text id="resultCountBottom"></text>
+        </div>
+
+    </div>
+
+    <!-- 页面底部的锚点 -->
+    <div id="bottom-of-page" style="height: 0;"></div>
+    <a href="#bottom-of-page" id="to-bottom-button">⬇️</a>
+    <a href="#top-of-page" id="to-top-button">⬆️</a>
+
+    <script>
+        let questions = []; //问题集
+        let selectedQuestionOrder = []; //记录原始的题号ID，避免在下载时顺序混乱
+        let highlightedRowId = null; //高亮
+        let currentPage = 1; //当前页，起始为1
+        const perPage = 50; //默认每页50条
+        let originalQuestionData = {};
+
+        // 页面加载后执行的初始化操作
+        document.addEventListener('DOMContentLoaded', () => {
+
+            let currentFilters = {}; //用户当前的过滤条件
+
+            loadQuestions(currentPage, currentFilters); //加载并显示第一页题目
+
+            // 顶部分页按钮
+            // “下一页”按钮点击事件
+            document.getElementById('nextPage').addEventListener('click', () => {
+                currentPage += 1;
+                loadQuestions(currentPage, currentFilters);
+            });
+            //上一页
+            document.getElementById('prevPage').addEventListener('click', () => {
+                if (currentPage > 1) {
+                    currentPage -= 1;
+                    loadQuestions(currentPage, currentFilters);
+                }
+            });
+            //首页
+            document.getElementById('firstPage').addEventListener('click', () => {
+                currentPage = 1;
+                loadQuestions(currentPage, currentFilters);
+            });
+            //尾页
+            document.getElementById('lastPage').addEventListener('click', () => {
+                currentPage = totalPages; // 假设 totalPages 是您在 loadQuestions 方法中获得的总页数
+                loadQuestions(currentPage, currentFilters);
+            });
+            //跳转
+            document.getElementById('goToPage').addEventListener('click', () => {
+                const pageInput = parseInt(document.getElementById('pageInput').value);
+                if (!isNaN(pageInput) && pageInput >= 1 && pageInput <= totalPages) {
+                    currentPage = pageInput;
+                    loadQuestions(currentPage, currentFilters);
+                } else {
+                    alert('请输入有效的页码');
+                }
+            });
+            // 底部分页按钮，同上
+            document.getElementById('nextPageBottom').addEventListener('click', () => {
+                currentPage += 1;
+                loadQuestions(currentPage, currentFilters);
+
+            });
+            document.getElementById('prevPageBottom').addEventListener('click', () => {
+                if (currentPage > 1) {
+                    currentPage -= 1;
+                    loadQuestions(currentPage, currentFilters);
+                }
+            });
+            document.getElementById('firstPageBottom').addEventListener('click', () => {
+                currentPage = 1;
+                loadQuestions(currentPage, currentFilters);
+            });
+            document.getElementById('lastPageBottom').addEventListener('click', () => {
+                currentPage = totalPages; // 假设 totalPages 是您在 loadQuestions 方法中获得的总页数
+                loadQuestions(currentPage, currentFilters);
+            });
+            document.getElementById('goToPageBottom').addEventListener('click', () => {
+                const pageInput = parseInt(document.getElementById('pageInputBottom').value);
+                if (!isNaN(pageInput) && pageInput >= 1 && pageInput <= totalPages) {
+                    currentPage = pageInput;
+                    loadQuestions(currentPage, currentFilters);
+                } else {
+                    alert('请输入有效的页码');
+                }
+            });
+
+            //重置按钮，其实就是刷新
+            document.getElementById('reloadPage').addEventListener('click', () => {
+                currentFilters = {};
+                currentPage = 1; // 重置到第一页
+                loadQuestions(currentPage, currentFilters);
+            });
+        });
+
+        //加载题目并且分页显示
+        function loadQuestions(page, filters = {}) {
+            //给一个默认值防止报错
+            const {
+                keyword = '', knowledgePoint = '', difficulty = '', source = '', exactMatch = false, choiceOnly = false, choiceMulti = false, fillBlank = false, my_questions = false, question_id= ''
+            } = filters;
+
+            //显示加载提示
+            document.getElementById('questionsTable').innerHTML = '<tr><td colspan="8" class="loading">加载中...</td></tr>';
+            document.getElementById('resultCount').innerText = '';
+
+            //发送请求数据
+            fetch(`/api/questions?page=${page}&per_page=${perPage}&keyword=${keyword}&knowledge_point=${knowledgePoint}&difficulty=${difficulty}&source=${source}&exact_match=${exactMatch}&choice_only=${choiceOnly}&choice_multi=${choiceMulti}&fill_blank=${fillBlank}&my_questions=${my_questions}&question_id=${question_id}`).then(response => response.json()).then(data => {
+                questions = data.questions;
+
+                //标记已选择的题目
+                questions.forEach(question => {
+                    question.selected = selectedQuestionOrder.includes(question.id);
+                });
+                //重新渲染
+                renderQuestions(questions);
+                //更新分页控件
+                updatePagination(data.current_page, data.total_pages);
+                //显示总题量
+                document.getElementById('resultCount').innerText = `共${data.result_total}题`;
+
+            }).catch(error => console.error('Error loading questions:', error));
+        }
+        //更新分页控件
+        function updatePagination(current, total) {
+            totalPages = total; // 设置总页数，以便其他地方使用
+            document.getElementById('pageInfo').innerText = `第 ${current} 页 / 共 ${total} 页`;
+            document.getElementById('pageInfoBottom').innerText = `第 ${current} 页 / 共 ${total} 页`;
+            document.getElementById('prevPage').disabled = current === 1;
+            document.getElementById('nextPage').disabled = current === total;
+            document.getElementById('prevPageBottom').disabled = current === 1;
+            document.getElementById('nextPageBottom').disabled = current === total;
+            document.getElementById('firstPage').disabled = current === 1;
+            document.getElementById('lastPage').disabled = current === total;
+            document.getElementById('firstPageBottom').disabled = current === 1;
+            document.getElementById('lastPageBottom').disabled = current === total;
+        }
+        //渲染题目表格
+        function renderQuestions(cur_questions) {
+            const tableBody = document.getElementById('questionsTable');
+            tableBody.innerHTML = '';
+
+            //遍历所有题目并生成HTML行
+            let rowsHtml = cur_questions.map((q, index) => {
+                if (Object.keys(q).length === 0) {
+                    return '';
+                }
+                const isChecked = q.selected ? 'checked' : ''; //检测是否被选中
+                // 处理知识点，按 "|" 分割后换行显示
+                const knowledgePointsHtml = q.knowledge_point.split('|').map(kp => `${kp.trim()} `).join('');
+                const row = `
+                <tr>
+                    <td><input type="checkbox" class="question-checkbox large-checkbox" data-index="${index}" ${isChecked}></td>
+                    <td class="single-line" for=>${q.id}</td>
+                    <td onclick="showQuestionDetail(${q.id})" style="cursor: pointer;">
+                        <div class="sub-info">
+                            知识点：${knowledgePointsHtml} | 难度：${q.difficulty} | 已做：${q.attempts} | 正确率：${q.percentage}% | 来源：${q.source} | 解析：${q.analysis?'√':'×'}  | 添加人: ${q.added_by}
+                        </div>
+                        <div class="highlighted-content">${q.content}</div>
+                    </td>
+                    <td> <!-- <button class="btn btn-info" onclick="showQuestionDetail(${q.id})">详情</button><br><br> -->
+                        <button class="btn btn-primary" onclick="showEditQuestionModal(${q.id})">修改</button><br><br>
+                        <button class="btn btn-danger" onclick="deleteQuestion('${q.id}')">删除</button>
+                    </td>
+                </tr>`;
+                return row;
+            }).join('');
+            tableBody.innerHTML = rowsHtml; //将每一行插入表格
+
+            // “全选”复选框的事件处理
+            const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+            // 先移除旧的事件处理程序以避免重复绑定
+            selectAllCheckbox.removeEventListener('change', handleSelectAllChange);
+            // 再添加新的事件处理程序
+            selectAllCheckbox.addEventListener('change', handleSelectAllChange);
+        }
+        //单个复选框的事件委托
+        document.getElementById('questionsTable').addEventListener('change', function(event) {
+            if (event.target.classList.contains('question-checkbox')) {
+                const index = event.target.getAttribute('data-index');
+                const questionId = questions[index].id;
+                if (event.target.checked) {
+                    if (!selectedQuestionOrder.includes(questionId)) {
+                        selectedQuestionOrder.push(questionId);
+                    }
+                } else {
+                    selectedQuestionOrder = selectedQuestionOrder.filter(id => id !== questionId);
+                }
+                updateSelectedQuestionIds();
+            }
+        });
+
+        //“全选”复选框的事件处理函数
+        function handleSelectAllChange() {
+            const isChecked = this.checked;
+
+            document.querySelectorAll('.question-checkbox').forEach(checkbox => {
+                checkbox.checked = isChecked;
+                const index = checkbox.getAttribute('data-index');
+                const questionId = questions[index].id;
+
+                if (isChecked) {
+                    if (!selectedQuestionOrder.includes(questionId)) {
+                        selectedQuestionOrder.push(questionId);
+                    }
+                    questions[index].selected = true;
+                } else {
+                    selectedQuestionOrder = selectedQuestionOrder.filter(id => id !== questionId);
+                    questions[index].selected = false;
+                }
+            });
+            updateSelectedQuestionIds();
+        }
+
+        let tooltip; // 悬浮窗元素，只创建一个实例
+        let tooltipTimeout; // 用于控制悬浮窗显示的延迟
+
+        // 更新选中题目的ID到页面中的标签容器
+        function updateSelectedQuestionIds() {
+            const selectedQuestionTagsContainer = document.getElementById('selectedQuestionTags');
+            selectedQuestionTagsContainer.innerHTML = '';
+
+            selectedQuestionOrder.forEach(id => {
+                const tag = document.createElement('div');
+                tag.className = 'question-tag';
+                tag.draggable = true; // 设置标签为可拖动
+
+                const tagText = document.createElement('span');
+                tagText.textContent = id;
+
+                tag.onmouseenter = async function(event) {
+                    clearTimeout(tooltipTimeout);
+
+                    if (!tooltip) {
+                        tooltip = document.createElement('div');
+                        tooltip.className = 'tooltip';
+                        document.body.appendChild(tooltip);
+                    }
+
+                    tooltip.style.display = 'block';
+
+                    try {
+                        const response = await fetch(`/api/questions/${id}`);
+                        if (response.ok) {
+                            const questionData = await response.json();
+                            tooltip.innerHTML = `
+                                <strong>内容：</strong> ${questionData.content}<br>
+                                <strong>知识点：</strong> ${questionData.knowledge_point || '无'}<br>
+                                <strong>难度：</strong> ${questionData.difficulty || '无'}<br>
+                                <strong>来源：</strong> ${questionData.source || '无'}
+                            `;
+                        } else {
+                            tooltip.textContent = '无法加载题目信息';
+                        }
+                    } catch (error) {
+                        tooltip.textContent = '加载失败，请检查网络连接';
+                    }
+
+                    const windowHeight = window.innerHeight;
+                    const tooltipHeight = tooltip.offsetHeight || 100;
+
+                    tooltip.style.top = event.clientY + tooltipHeight + 20 > windowHeight ?
+                        `${event.pageY - tooltipHeight - 10}px` :
+                        `${event.pageY + 10}px`;
+                    tooltip.style.left = `${event.pageX + 10}px`;
+                    tooltip.style.opacity = '1';
+                };
+
+                tag.onmouseleave = function() {
+                    if (tooltip) {
+                        tooltip.style.opacity = '0';
+                        tooltipTimeout = setTimeout(() => {
+                            tooltip.style.display = 'none';
+                        }, 300);
+                    }
+                };
+
+                const deleteButton = document.createElement('button');
+                deleteButton.textContent = '✕';
+                deleteButton.onclick = function() {
+                    selectedQuestionOrder = selectedQuestionOrder.filter(questionId => questionId !== id);
+                    //document.querySelector(`.question-checkbox[data-index="${questions.findIndex(q => q.id === id)}"]`).checked = false;
+                    updateSelectedQuestionIds();
+                };
+
+                tag.appendChild(tagText);
+                tag.appendChild(deleteButton);
+                selectedQuestionTagsContainer.appendChild(tag);
+            });
+
+            // 使用 Sortable 使标签容器支持拖拽排序
+            Sortable.create(selectedQuestionTagsContainer, {
+                animation: 150,
+                onEnd: function(event) {
+                    const reorderedTags = Array.from(selectedQuestionTagsContainer.children);
+                    selectedQuestionOrder = reorderedTags.map(tag => Number(tag.querySelector('span').textContent));
+
+                    // 同步更新到 questions 数组的 selected 状态
+                    questions.forEach(q => {
+                        q.selected = selectedQuestionOrder.includes(q.id);
+                    });
+
+                    updateSelectedQuestionIds(); // 更新顺序和状态
+                }
+            });
+
+            // 同步选中状态到问题列表复选框
+            document.querySelectorAll('.question-checkbox').forEach((checkbox, index) => {
+                const questionId = questions[index].id;
+                checkbox.checked = selectedQuestionOrder.includes(questionId);
+            });
+        }
+
+
+
+        // 使用用户输入的过滤条件重新加载题目
+        function filterQuestions() {
+            const keyword = document.getElementById('keyword').value.trim();
+            const question_id = document.getElementById('question_id').value.trim();
+            const knowledgePoint = document.getElementById('knowledgePoint').value.toLowerCase();
+            const difficulty = document.getElementById('difficulty').value;
+            const source = document.getElementById('source').value.toLowerCase();
+            const exactMatch = document.getElementById('exactMatchSwitch').checked;
+            const choiceOnly = document.getElementById('choiceOnlySwitch').checked;
+            const choiceMulti = document.getElementById('choiceMultiSwitch').checked;
+            const fillBlank = document.getElementById('fillBlankSwitch').checked;
+            const myQuestions = document.getElementById('myQuestionsSwitch').checked;
+            currentPage = 1; // 重置到第一页
+            loadQuestions(currentPage, {
+                keyword,
+                knowledgePoint,
+                difficulty,
+                source,
+                exactMatch,
+                choiceOnly,
+                choiceMulti,
+                fillBlank,
+                my_questions: myQuestions,
+                question_id
+            });
+        }
+
+        let editingQuestionId = null; // 当前正在编辑的题目ID
+
+        // 显示编辑题目的模态框
+        function showEditQuestionModal(questionId) {
+            editingQuestionId = questionId;
+            const question = questions.find(q => q.id === questionId);
+
+            // 保存原始数据用于比较
+            originalQuestionData = {
+                content: question.content,
+                knowledge_point: question.knowledge_point,
+                difficulty: question.difficulty,
+                source: question.source,
+                answer: question.answer,
+                analysis: question.analysis,
+                description: question.description
+            };
+
+
+            // 使用Summernote编辑内容和解析
+            $('#editQuestionModal').on('shown.bs.modal', function() {
+                $('#editContent').summernote('code', question.content);
+                $('#editAnalysis').summernote('code', question.analysis);
+            });
+            document.getElementById('editknowledgePoint').value = question.knowledge_point;
+            document.getElementById('editDifficulty').value = question.difficulty;
+            document.getElementById('editSource').value = question.source;
+            document.getElementById('editAnswer').value = question.answer;
+            document.getElementById('editDescription').value = question.description; // 新增描述字段
+            new bootstrap.Modal(document.getElementById('editQuestionModal')).show();
+        }
+        // 处理题目编辑表单的提交，更新题目信息
+        document.getElementById('editQuestionForm').addEventListener('submit', function(event) {
+            event.preventDefault(); // 阻止默认提交行为
+            const updatedQuestion = {
+                content: document.getElementById('editContent').value,
+                knowledge_point: document.getElementById('editknowledgePoint').value,
+                difficulty: Number(document.getElementById('editDifficulty').value),
+                source: document.getElementById('editSource').value,
+                answer: document.getElementById('editAnswer').value,
+                analysis: document.getElementById('editAnalysis').value,
+                description: document.getElementById('editDescription').value
+            };
+            // 检查更新前和更新后的数据是否相同
+            const isUpdated = Object.keys(updatedQuestion).some(key => updatedQuestion[key] !== originalQuestionData[key]);
+
+            if (!isUpdated) {
+                alert("无更新！");
+                return;
+            }
+
+            fetch(`/api/questions/${editingQuestionId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(updatedQuestion)
+            }).then(response => {
+                if (response.ok) {
+                    return response.json();
+                }
+                throw new Error('Network response was not ok');
+            }).then(data => {
+                const index = questions.findIndex(q => q.id === editingQuestionId);
+                questions[index] = {
+                    ...questions[index],
+                    ...data,
+                    selected: questions[index].selected
+                };
+                renderQuestions(questions);
+                new bootstrap.Modal(document.getElementById('editQuestionModal')).hide();
+                originalQuestionData = updatedQuestion;
+                alert("更新成功！");
+            }).catch(error => {
+                console.error('更新失败:', error);
+            });
+        });
+        // 删除指定ID的题目
+        function deleteQuestion(questionId) {
+            if (confirm('确认删除该题目吗？')) {
+                fetch(`/api/questions/${questionId}`, {
+                    method: 'DELETE',
+                }).then(response => response.json()).then(data => {
+                    if (data.message) {
+                        alert(data.message); // 显示删除成功消息
+                        // 再次获取问题列表
+                        return fetch('/api/questions');
+                    } else if (data.error) {
+                        alert(data.error); // 显示错误信息
+                        return Promise.reject('Error: ' + data.error);
+                    }
+                }).then(response => response.json()).then(data => {
+                    if (data.questions && Array.isArray(data.questions)) {
+                        // 更新前端问题列表
+                        questions = data.questions;
+                        renderQuestions(questions);
+                    } else {
+                        console.error('收到的后端数据未包含questions:', data);
+                    }
+                }).catch(error => {
+                    console.error('删除错误:', error);
+                });
+            }
+        }
+        // 将UTC时间转换为本地时间
+        function formatToLocalTime(utcDateString) {
+            // 将 UTC 时间字符串解析为 Date 对象
+            const utcDate = new Date(utcDateString);
+            // 创建偏移的时间 (UTC+8)
+            const localDate = new Date(utcDate.getTime() - 8 * 60 * 60 * 1000);
+            return localDate;
+        }
+        // 展示题目详情，填充模态框内容并显示
+        function showQuestionDetail(questionId) {
+            const question = questions.find(q => q.id === questionId);
+            document.getElementById('modalContent').innerHTML = question.content;
+            document.getElementById('modalKnowledgePoint').innerText = question.knowledge_point;
+            document.getElementById('modalDifficulty').innerText = question.difficulty;
+            document.getElementById('modalSource').innerText = question.source;
+            document.getElementById('modalAnswer').innerText = question.answer;
+            document.getElementById('modalAnalysis').innerHTML = question.analysis;
+            document.getElementById('modalDescription').innerText = question.description;
+            // 格式化更新时间为中文格式
+            const updatedAt = formatToLocalTime(question.updated_at);
+            const formattedUpdatedAt = new Intl.DateTimeFormat('zh-CN', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: 'numeric',
+                minute: 'numeric',
+                second: 'numeric'
+            }).format(updatedAt);
+            document.getElementById('modalUpdatedAt').innerText = formattedUpdatedAt;
+            document.getElementById('modalAddedBy').innerText = question.added_by.join(', ');
+            new bootstrap.Modal(document.getElementById('questionDetailModal')).show();
+        }
+
+        // 下载按钮事件，显示下载模态框
+        document.getElementById('downloadBtn').addEventListener('click', function() {
+            $('#downloadModal').modal('show');
+            loadClasses();
+        });
+
+        // 加载可选择的班级数据
+        function loadClasses() {
+            $.getJSON('/classes', function(data) {
+                var classSelect = $('#classSelect');
+                classSelect.empty();
+                $.each(data, function(index, classItem) {
+                    var option = $('<option></option>').attr('value', classItem.name).text(classItem.name);
+                    classSelect.append(option);
+                });
+            });
+        }
+
+        // 页面加载后，处理组卷功能
+        $(document).ready(function() {
+            $('#create_exam').on('click', function() {
+                var listName = $('#listNameInput').val();
+                var duration = $('#durationInput').val();
+                var numQuestions = $('#numQuestionsInput').val();
+                var scorePerQuestion = $('#scorePerQuestionInput').val();
+                var selectedClasses = $('#classSelect').val();
+                // 检查所有字段是否已填写
+                if (!listName) {
+                    alert("请输入题目清单名称");
+                    return;
+                }
+                if (!duration) {
+                    alert("请输入考试时长");
+                    return;
+                }
+                if (!numQuestions) {
+                    alert("请输入题目数量");
+                    return;
+                }
+                if (!scorePerQuestion) {
+                    alert("请输入每道题的分数");
+                    return;
+                }
+                if (!selectedClasses || selectedClasses.length === 0) {
+                    alert("请选择至少一个班级");
+                    return;
+                }
+                var questionIds = selectedQuestionOrder
+                $.ajax({
+                    url: '/create_exam',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        name: listName,
+                        question_ids: questionIds,
+                        duration: duration,
+                        num_questions: numQuestions,
+                        score_per_question: scorePerQuestion,
+                        classes: selectedClasses
+                    }),
+                    success: function(response) {
+                        alert(response.message);
+                        $('#downloadModal').modal('hide');
+                    }
+                });
+            });
+        });
+
+        //下载题目
+        document.getElementById('confirmDownload').addEventListener('click', function() {
+            let listName = document.getElementById('listNameInput').value.trim();
+            if (!listName) {
+                listName = "";
+            }
+            const questionIds = selectedQuestionOrder;
+    
+            fetch('/generate_html', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    question_ids: questionIds,
+                    list_name: listName
+                }),
+            })
+            .then(response => response.text())
+            .then(htmlContent => {
+                // 将 HTML 内容插入到一个隐藏的 div 中
+                const container = document.createElement('div');
+                container.innerHTML = htmlContent;
+                document.body.appendChild(container);
+    
+                // 转换页面中的图片为 Base64
+                const images = container.querySelectorAll('img');
+                let imagePromises = [];
+                images.forEach(img => {
+                    imagePromises.push(convertImageToBase64(img));
+                });
+    
+                // 等待所有图片转换完成后再导出
+                Promise.all(imagePromises).then(() => {
+                    $(container).wordExport('questions');
+                    document.body.removeChild(container); // 移除临时容器
+                });
+            })
+            .catch(error => {
+                console.error('Download error:', error);
+                alert('下载出错，请稍后再试！');
+            });
+        });
+    
+        // 图片转 Base64 的函数，返回 Promise 确保转换完成
+        function convertImageToBase64(imgElement) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.crossOrigin = 'Anonymous';
+                img.src = imgElement.src;
+
+                img.onload = function () {
+                    const canvas = document.createElement("canvas");
+                    // 使用 imgElement 的宽高来调整导出大小
+                    canvas.width = imgElement.width;
+                    canvas.height = imgElement.height;
+                    const ctx = canvas.getContext("2d");
+                    ctx.drawImage(img, 0, 0, imgElement.width, imgElement.height);
+        
+                    imgElement.src = canvas.toDataURL("image/png");
+                    imgElement.style.width = `${imgElement.width}px`;
+                    imgElement.style.height = `${imgElement.height}px`;
+                    resolve(); // 完成转换
+                };
+    
+                img.onerror = reject;
+            });
+        }
+        // 刷新页面
+        function reloadPage() {
+            location.reload();
+        }
+
+        // 页面跳转按钮（顶部和底部）的事件处理
+        document.getElementById('to-bottom-button').addEventListener('click', function(e) {
+            e.preventDefault();
+            document.getElementById('bottom-of-page').scrollIntoView({
+                behavior: 'smooth'
+            });
+        });
+        document.getElementById('to-top-button').addEventListener('click', function(e) {
+            e.preventDefault();
+            document.getElementById('top-of-page').scrollIntoView({
+                behavior: 'smooth'
+            });
+        });
+
+        // 转义HTML字符串，避免特殊字符影响页面
+        function escapeHTML(str) {
+            return str.replace(/[&<>"']/g, function(match) {
+                switch (match) {
+                    case '&':
+                        return '&amp;';
+                    case '<':
+                        return '&lt;';
+                    case '>':
+                        return '&gt;';
+                    case '"':
+                        return '&quot;';
+                    case "'":
+                        return '&#39;';
+                }
+            });
+        }
+        //批量删除
+        document.getElementById('batchDeleteBtn').addEventListener('click', function() {
+            if (selectedQuestionOrder.length === 0) {
+                alert('请选择要删除的题目！');
+                return;
+            }
+        
+            if (!confirm('确定要删除选中的题目吗？此操作不可恢复！')) {
+                return;
+            }
+        
+            fetch('/api/questions/batch_delete', {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ question_ids: selectedQuestionOrder }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert(`删除失败：${data.error}`);
+                } else {
+                    alert(data.message);
+                    
+                    // 批量删除后清空选中状态
+                    selectedQuestionOrder = [];
+                    updateSelectedQuestionIds();
+                    
+                    // 重新加载当前页
+                    loadQuestions(currentPage);
+                }
+            })
+            .catch(error => {
+                console.error('批量删除出错:', error);
+                alert('批量删除出错，请稍后重试！');
+            });
+        });
+
+        // 高亮显示选中的题目行
+        function toggleHighlight(row, questionId) {
+            document.querySelectorAll('.highlighted').forEach(function(r) {
+                r.classList.remove('highlighted');
+            });
+            row.classList.add('highlighted');
+            highlightedRowId = questionId;
+        }
+
+        //难易度说明
+        function openPopup(x) {
+            if (x == 0) alert("难易度等级1-5级：\n  1级：单纯的知识性考察\n  2级：日常的应用，初步的理解，简单的逻辑\n  3级：稍复杂的逻辑，原理性的理解\n  4级：对解决生活中一般问题能力的考察，或较强逻辑推演能力的考察\n  5级：对解决生活中复杂问题能力的考察，考察形式多样化，需极强的信息意识与逻辑能力，一般为python压轴大题。\n");
+            else if (x == 1) alert("1.默认模糊匹配，接受空格、标点等偏差\n2.精确查询：支持正则表达式，需完全匹配\n3.此项搜索范围包括题目文本、答案、解析")
+        }
+//知识点菜单
+$(document).ready(function () {
+    $.ajax({
+        url: '/api/knowledgepoints',
+        type: 'GET',
+        success: function (modules) {
+            // 动态添加 '添加知识点' 表单
+            var formHtml = `
+                <div style="display: flex; align-items: center;">
+                    <form id="add-knowledgepoint-form" style="display: flex">
+                        <input type="text" class="form-control" id="newModule" name="module" placeholder="模块" style="width: 150px; margin-right: 10px;">
+                        <input type="text" class="form-control" id="newKnowledgePoint" name="knowledgepoint" placeholder="知识点" style="width: 150px; margin-right: 10px;">
+                        <button type="submit" class="btn btn-primary">添加</button>
+                    </form>
+                </div>`;
+            $('#knowledge-points').append(formHtml);
+
+            var bgClasses = ['bg-primary', 'bg-warning', 'bg-success'];
+            modules.forEach(function (module, index) {
+                var bgClass = bgClasses[index % bgClasses.length];
+                $('#knowledge-points').append(`<p class="badge ${bgClass} m-1">${module.module}</p>`);
+
+                // 为每个知识点生成可点击的标签
+                module.knowledgepoints.forEach(function (kp) {
+                    $('#knowledge-points').append(`
+                        <span class="badge bg-secondary m-1 knowledge-tag" 
+                              data-knowledge="${kp.knowledgepoint}" 
+                              onclick="toggleKnowledgePoint(this)">
+                            ${kp.knowledgepoint}
+                        </span>`);
+                });
+                $('#knowledge-points').append('<br>');
+            });
+
+            $('#knowledge-points').append('<input type="text" class="form-control" id="knowledgePoint" name="knowledge_point" hidden>');
+
+            // 处理表单提交
+            $('#add-knowledgepoint-form').submit(function (event) {
+                event.preventDefault();
+                var newModule = $('#newModule').val().trim();
+                var newKnowledgePoint = $('#newKnowledgePoint').val().trim();
+                if (newModule && newKnowledgePoint) {
+                    $.ajax({
+                        url: '/api/add_knowledgepoint',
+                        type: 'POST',
+                        contentType: 'application/json',
+                        data: JSON.stringify({
+                            module: newModule,
+                            knowledgepoint: newKnowledgePoint
+                        }),
+                        success: function (response) {
+                            alert('知识点添加成功');
+                            window.location.reload();
+                        },
+                        error: function (response) {
+                            alert('添加知识点失败: ' + response.responseText);
+                        }
+                    });
+                } else {
+                    alert('请填写完整的模块和知识点');
+                }
+            });
+        },
+        error: function (error) {
+            console.log(error);
+        }
+    });
+});
+
+// 负责知识点选择和取消选择
+function toggleKnowledgePoint(element) {
+    const knowledgeInput = document.getElementById('knowledgePoint');
+    const selectedKnowledge = element.dataset.knowledge;
+
+    let currentKnowledge = knowledgeInput.value ? knowledgeInput.value.split('|') : [];
+
+    if (currentKnowledge.includes(selectedKnowledge)) {
+        // 如果已存在，则移除
+        currentKnowledge = currentKnowledge.filter(k => k !== selectedKnowledge);
+        $(element).removeClass('bg-info').addClass('bg-secondary');
+    } else {
+        // 如果不存在，则添加
+        currentKnowledge.push(selectedKnowledge);
+        $(element).removeClass('bg-secondary').addClass('bg-info');
+    }
+
+    // 更新隐藏输入框的值
+    knowledgeInput.value = currentKnowledge.join('|');
+}
+
+        //GPT解析生成
+        function generateAnalysis(contentbox, answerbox, resbox) {
+            const content = document.getElementById(contentbox).value;
+            const answer = document.getElementById(answerbox).value;
+            // 检查题目是否为空
+            if (content.trim() === '') {
+                alert('题目为空');
+                return; // 提前退出函数
+            }
+            // 检查答案是否为空
+            if (answer.trim() === '') {
+                const userConfirmed = confirm('答案为空可能会导致正确性不足，确定吗？');
+                if (!userConfirmed) {
+                    return; // 用户选择取消，提前退出函数
+                }
+            }
+            $(resbox).summernote('code', '生成中...');
+            fetch('/generate_analysis_baidu/jiexi', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    content,
+                    answer
+                })
+            }).then(response => response.json()).then(data => {
+                if (data.error) {
+                    console.error('Error:', data.error);
+                } else {
+                    $(resbox).summernote('code', data.analysis);
+                }
+            }).catch(error => {
+                console.error('Error:', error);
+            });
+        }
+        //html格式整理
+        function html_format(obj) {
+            var content = $(obj).summernote('code');
+            $(obj).summernote('code', '整理中...');
+            fetch(`/html_format`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    content
+                })
+            }).then(response => response.json()).then(data => {
+                if (data.error) {
+                    console.error('Error:', data.error);
+                } else {
+                    $(obj).summernote('code', data.result);
+                }
+            }).catch(error => {
+                console.error('Error:', error);
+            });
+        }
+        // 选择问题格式化
+        function choose_format(obj) {
+            var content = $(obj).summernote('code');
+            $(obj).summernote('code', '整理中...');
+            fetch(`/choose_format`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        content
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        console.error('Error:', data.error);
+                    } else {
+                        $(obj).summernote('code', data.result);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+        }
+        //summernote控件（包含图片上传）
+        $(document).ready(function() {
+            // 创建一个函数，用于初始化 Summernote 编辑器
+            function initializeSummernote(selector) {
+                $(selector).summernote({
+                    tabDisable: true,
+                    // 添加自定义字体到字体名称和字体样式下拉列表
+                    fontNames: ['宋体', 'Times New Roman', '黑体', '仿宋', '楷体', '微软雅黑'],
+                    fontNamesIgnoreCheck: ['楷体'],
+                    toolbar: [
+                        // 定义工具栏
+                        ['style', ['style']],
+                        ['font', ['bold', 'italic', 'underline', 'clear', 'borderedText']],
+                        // 'fontname' 是字体选项
+                        ['fontname', ['fontname']],
+                        ['color', ['color']],
+                        ['para', ['ul', 'ol', 'paragraph']],
+                        ['height', ['height']],
+                        ['table', ['table']],
+                        ['insert', ['link', 'picture', 'video']],
+                        ['view', ['fullscreen', 'codeview', 'help']]
+                    ],
+                    buttons: {
+                        borderedText: function(context) {
+                            var ui = $.summernote.ui;
+                            return ui.button({
+                                contents: '▣',
+                                tooltip: '字体边框',
+                                click: function() {
+                                    // 获取选中的文本并添加/移除边框样式
+                                    var selectedText = window.getSelection().toString();
+                                    if (selectedText) {
+                                        context.invoke('editor.pasteHTML', '<span style="border:solid windowtext 1.0pt">' + selectedText + '</span>');
+                                    } else {
+                                        alert("请先选择要应用边框的文本");
+                                    }
+                                }
+                            }).render();
+                        }
+                    },
+                    callbacks: {
+                        onImageUpload: function(files) {
+                            var data = new FormData();
+                            data.append('file', files[0]);
+                            $.ajax({
+                                url: '/upload_image', // 你的图片上传接口
+                                method: 'POST',
+                                data: data,
+                                processData: false,
+                                contentType: false,
+                                success: function(response) {
+                                    // 确保这里正确地获取了 URL
+                                    var imageUrl = response.url;
+                                    if (imageUrl) {
+                                        // 插入图片
+                                        $(selector).summernote('insertImage', imageUrl);
+                                    } else {
+                                        console.error('URL 格式错误', response);
+                                    }
+                                },
+                                error: function(err) {
+                                    console.error('图片上传失败', err);
+                                }
+                            });
+                        }
+                    },
+                    height: 300, // 设置编辑器高度
+                    minHeight: null, // 最小高度
+                    maxHeight: null, // 最大高度
+                });
+                //$(selector).summernote('removeModule', 'autoLink'); //这一模块中存在summernote的天然BUG，虽然问题不大，但如果看着心烦可以去掉这个模块
+            }
+            // 为每个编辑器调用初始化函数
+            initializeSummernote('#content');
+            initializeSummernote('#analysis');
+            initializeSummernote('#editContent');
+            initializeSummernote('#editAnalysis');
+        });
+    </script>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/5.2.3/bootstrap.min.css') }}">
+    <script src="{{ url_for('static', filename='jquery/jquery-3.6.0.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/4.5.2/bootstrap.bundle.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='export_docx/FileSaver.js') }}"></script>
+    <script src="{{ url_for('static', filename='export_docx/jquery.wordexport.js') }}"></script>
+    <!-- 引入Summernote JS 提供html控件 -->
+    <script src="{{ url_for('static', filename='js/summernote-bs5.min.js') }}"></script>
+    <!-- 引入Summernote CSS -->
+    <link href="{{ url_for('static', filename='css/summernote-bs5.min.css') }}" rel="stylesheet">
+
+    {% endblock %}
+</body>
+
+</html>

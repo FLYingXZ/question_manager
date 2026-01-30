@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>个人题库管理系统</title>
+  <link rel="icon" href="/static/favicon.ico" type="image/x-icon">
+
+  <style>
+    :root{
+      /* 初音色系：薄荷青 + 蓝绿 */
+      --miku: #39C5BB;
+      --miku-2: #2FB9FF;
+      --miku-3: #7EF2E6;
+      --ink: #1b2b2a;
+      --card: rgba(255,255,255,.86);
+      --line: rgba(57,197,187,.35);
+      --shadow: 0 18px 45px rgba(17, 45, 44, .22);
+    }
+
+    *{ box-sizing: border-box; }
+    body{
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Nunito", system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+      color: var(--ink);
+      overflow-x: hidden;
+      background:
+        radial-gradient(1200px 500px at 15% 10%, rgba(126,242,230,.75), transparent 60%),
+        radial-gradient(900px 500px at 85% 15%, rgba(47,185,255,.55), transparent 55%),
+        radial-gradient(800px 500px at 70% 90%, rgba(57,197,187,.55), transparent 60%),
+        linear-gradient(180deg, #eefcff 0%, #dff9f6 50%, #effbff 100%);
+    }
+
+    /* 背景卡通气泡 */
+    .bubbles{
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: 0;
+    }
+    .bubble{
+      position: absolute;
+      width: 160px;
+      height: 160px;
+      border-radius: 999px;
+      background: radial-gradient(circle at 30% 30%, rgba(255,255,255,.9), rgba(255,255,255,.25) 55%, rgba(57,197,187,.15));
+      border: 2px solid rgba(57,197,187,.18);
+      filter: blur(.1px);
+      animation: floaty 10s ease-in-out infinite;
+    }
+    .bubble:nth-child(1){ left: 6%; top: 18%; width: 140px; height: 140px; animation-duration: 12s;}
+    .bubble:nth-child(2){ left: 78%; top: 12%; width: 180px; height: 180px; animation-duration: 14s;}
+    .bubble:nth-child(3){ left: 12%; top: 72%; width: 110px; height: 110px; animation-duration: 11s;}
+    .bubble:nth-child(4){ left: 72%; top: 70%; width: 130px; height: 130px; animation-duration: 13s;}
+    .bubble:nth-child(5){ left: 45%; top: 55%; width: 90px; height: 90px; animation-duration: 9s;}
+
+    @keyframes floaty{
+      0%,100%{ transform: translateY(0) translateX(0) rotate(0deg); }
+      50%{ transform: translateY(-18px) translateX(10px) rotate(3deg); }
+    }
+
+    .page{
+      position: relative;
+      z-index: 1;
+      min-height: 88vh;
+      display: grid;
+      place-items: center;
+      padding: 28px 16px 10px;
+    }
+
+    .auth-form{
+      width: min(360px, 92vw);
+      padding: 26px 22px 22px;
+      border-radius: 22px;
+      background: var(--card);
+      box-shadow: var(--shadow);
+      border: 2px solid rgba(255,255,255,.7);
+      backdrop-filter: blur(10px);
+      position: relative;
+    }
+
+    /* 卡片顶部“贴纸”装饰 */
+    .auth-form::before{
+      content:"";
+      position:absolute;
+      left: 18px;
+      top: -12px;
+      width: 92px;
+      height: 28px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, rgba(57,197,187,.35), rgba(47,185,255,.30));
+      border: 2px solid rgba(255,255,255,.8);
+      box-shadow: 0 10px 20px rgba(57,197,187,.18);
+      transform: rotate(-6deg);
+    }
+
+    .title{
+      margin: 6px 0 18px;
+      text-align: center;
+      font-family: "ZCOOL KuaiLe", "Nunito", sans-serif;
+      font-weight: 400;
+      font-size: 26px;
+      letter-spacing: 1px;
+      color: #135f5b;
+      text-shadow: 0 2px 0 rgba(255,255,255,.7);
+    }
+
+    .subtitle{
+      text-align: center;
+      margin: -6px 0 16px;
+      font-size: 13px;
+      color: rgba(27,43,42,.65);
+    }
+
+    .field{
+      margin: 12px 0;
+    }
+
+    .label{
+      display: block;
+      font-size: 13px;
+      font-weight: 800;
+      color: rgba(27,43,42,.78);
+      margin: 0 0 8px;
+      letter-spacing: .2px;
+    }
+
+    .input{
+      width: 100%;
+      padding: 12px 12px;
+      border-radius: 14px;
+      border: 2px solid rgba(57,197,187,.25);
+      background: rgba(255,255,255,.9);
+      outline: none;
+      color: #143b39;
+      transition: .2s ease;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.5);
+    }
+
+    .input::placeholder{ color: rgba(27,43,42,.35); }
+
+    .input:focus{
+      border-color: rgba(57,197,187,.65);
+      box-shadow:
+        0 0 0 5px rgba(57,197,187,.18),
+        0 10px 25px rgba(47,185,255,.12);
+      transform: translateY(-1px);
+    }
+
+    .btn{
+      width: 100%;
+      margin-top: 14px;
+      padding: 12px 14px;
+      border: none;
+      border-radius: 16px;
+      cursor: pointer;
+      font-weight: 900;
+      letter-spacing: .6px;
+      color: #083c39;
+      background: linear-gradient(135deg, var(--miku-3) 0%, var(--miku) 40%, var(--miku-2) 100%);
+      box-shadow: 0 14px 28px rgba(57,197,187,.22);
+      transition: transform .12s ease, filter .2s ease, box-shadow .2s ease;
+      position: relative;
+    }
+
+    .btn:hover{
+      filter: brightness(1.03) saturate(1.05);
+      box-shadow: 0 18px 34px rgba(57,197,187,.28);
+    }
+
+    .btn:active{
+      transform: translateY(2px) scale(.995);
+      box-shadow: 0 10px 20px rgba(57,197,187,.18);
+    }
+
+    .tips{
+      margin-top: 12px;
+      padding: 10px 12px;
+      border-radius: 14px;
+      background: rgba(57,197,187,.10);
+      border: 1px dashed rgba(57,197,187,.35);
+      color: rgba(27,43,42,.72);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    footer{
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      padding: 10px 12px 16px;
+      color: rgba(27,43,42,.55);
+      font-size: 12px;
+    }
+
+    /* 减少动效偏好 */
+    @media (prefers-reduced-motion: reduce){
+      .bubble{ animation: none; }
+      .input:focus{ transform: none; }
+      .btn{ transition: none; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="bubbles" aria-hidden="true">
+    <div class="bubble"></div>
+    <div class="bubble"></div>
+    <div class="bubble"></div>
+    <div class="bubble"></div>
+    <div class="bubble"></div>
+  </div>
+
+  <div class="page">
+    <form id="loginForm" class="auth-form" autocomplete="on">
+      <h1 class="title">个人题库管理系统</h1>
+      <div class="subtitle">你的信息学资源管家</div>
+
+      <div class="field">
+        <label class="label" for="username">Username</label>
+        <input class="input" id="username" type="text" name="username" placeholder="请输入用户名" />
+      </div>
+
+      <div class="field">
+        <label class="label" for="password">Password</label>
+        <input class="input" id="password" type="password" name="password" placeholder="请输入密码" />
+      </div>
+
+      <button class="btn" type="submit">登录</button>
+
+      <!-- 可选提示块（你也可以删掉） -->
+      <!--
+      <div class="tips">
+        账号示例：X班XXX（如 1班张三）<br/>
+        默认密码：123456
+      </div>
+      -->
+    </form>
+  </div>
+
+  <footer>
+    <a href="https://beian.miit.gov.cn/">浙ICP备2021039264号</a>
+  </footer>
+
+  <script>
+    document.getElementById('loginForm').onsubmit = async function(e) {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      const data = Object.fromEntries(formData.entries());
+      const response = await fetch('/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      const result = await response.json();
+      alert(result.message);
+      if (response.ok && result.redirect) {
+        window.location.href = result.redirect;
+      }
+    }
+
+    // 你原代码里 registerButton 注释了，这里也不再绑定，避免报错
+    // document.getElementById('registerButton').onclick = function() {
+    //   window.location.href = 'register';
+    // }
+  </script>
+</body>
+</html>

@@ -1,0 +1,380 @@
+{% extends "header.html" %}
+
+{% block content %}
+<style>
+    :root{
+        --text:#1f2d3d; --muted:#6b7b8c; --line:#e9eef5; --card:#fff;
+        --brand:#2f80ed; --brand2:#1b5fbf;
+        --ok:#1e874b; --okbg:rgba(30,135,75,.12);
+        --mid:#b26a00; --midbg:rgba(243,156,18,.16);
+        --bad:#c0392b; --badbg:rgba(231,76,60,.14);
+    }
+
+    .page-wrap{ padding:18px 18px 22px; }
+
+    .page-title{
+        display:flex;align-items:center;justify-content:space-between;gap:14px;
+        padding:14px;background:linear-gradient(180deg,#fff 0%, #fbfdff 100%);
+        border:1px solid var(--line);border-radius:12px;
+        box-shadow:0 10px 30px rgba(31,45,61,.06);margin-bottom:14px;
+    }
+    .page-title h2{margin:0;color:var(--text);font-weight:950;font-size:18px;}
+    .score-meta{color:var(--muted);font-size:13px;text-align:right;line-height:1.35;white-space:nowrap;}
+    .score-badge{
+        display:inline-flex;align-items:center;gap:10px;
+        padding:8px 12px;border-radius:999px;
+        background:linear-gradient(180deg, rgba(47,128,237,.16) 0%, rgba(47,128,237,.10) 100%);
+        border:1px solid rgba(47,128,237,.30);
+        box-shadow:0 10px 24px rgba(47,128,237,.18);
+        color:var(--brand2);font-weight:950;font-size:13px;
+    }
+    .score-num{font-size:22px;font-weight:1000;color:#0b63d1;letter-spacing:.3px;}
+    .debug-tip{display:block;margin-top:6px;color:#d35400;font-size:12px;}
+
+    .section-title{
+        margin:14px 2px 10px;color:var(--text);font-weight:950;font-size:14px;
+        display:flex;align-items:center;gap:8px;
+    }
+    .section-title:before{
+        content:"";width:10px;height:10px;border-radius:3px;
+        background:rgba(47,128,237,.18);border:1px solid rgba(47,128,237,.28);
+    }
+
+    .summary-card{
+        background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden;
+        box-shadow:0 10px 30px rgba(31,45,61,.06);
+    }
+    .summary-table{width:100%;margin:0;border-collapse:collapse;}
+    .summary-table th,.summary-table td{
+        padding:8px 10px;
+        border-bottom:1px solid var(--line);
+        font-size:13px;color:var(--text);
+        text-align:center;
+        vertical-align:middle;
+    }
+    .summary-table thead th{
+        background:linear-gradient(180deg,#f7fbff 0%, #f3f8ff 100%);
+        font-weight:950;font-size:12px;
+    }
+    .summary-table tbody tr:hover{background:#f8fbff;}
+    .summary-table tbody tr.is-open{background:#f3f8ff;}
+
+    .row-btn{background:transparent;border:0;padding:0;font:inherit;color:inherit;cursor:pointer;}
+    .q-pill{
+        font-weight:1000;color:var(--brand);
+        padding:4px 10px;border-radius:999px;
+        background:rgba(47,128,237,.10);border:1px solid rgba(47,128,237,.18);
+        display:inline-block;transition:all .15s ease;
+    }
+    tr.is-open .q-pill{background:rgba(47,128,237,.18);border-color:rgba(47,128,237,.30);}
+
+    .badge-status{
+        display:inline-flex;align-items:center;padding:4px 10px;border-radius:999px;
+        font-weight:950;font-size:12px;border:1px solid transparent;
+    }
+    .badge-correct{color:var(--ok);background:var(--okbg);border-color:rgba(30,135,75,.25);}
+    .badge-partial{color:var(--mid);background:var(--midbg);border-color:rgba(243,156,18,.30);}
+    .badge-wrong{color:var(--bad);background:var(--badbg);border-color:rgba(231,76,60,.28);}
+
+    .actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:12px 0 6px;}
+    .btn-ghost{
+        background:#fff;color:#2c3e50;border:1px solid var(--line);
+        padding:8px 14px;border-radius:8px;font-weight:700;cursor:pointer;
+        transition:all .15s ease;
+    }
+    .btn-ghost:hover{border-color:#cfe0ff;transform:translateY(-1px);}
+
+    /* 详情行：滑动展开/收起 */
+    .detail-row td{padding:0;background:#fff;}
+    .detail-wrap{
+        overflow:hidden;
+        max-height:0;
+        opacity:0;
+        transform:translateY(-4px);
+        transition:max-height .32s ease, opacity .22s ease, transform .22s ease;
+        will-change:max-height;
+        border-top:1px solid var(--line);
+        background:linear-gradient(180deg,#fff 0%, #fbfdff 100%);
+    }
+    .detail-row.is-open .detail-wrap{
+        opacity:1;
+        transform:translateY(0);
+    }
+    .detail-panel{ padding:12px; }
+    .detail-panel, .detail-panel *{ text-align:left; }
+
+    /* 展开后两栏（宽屏），窄屏自动上下 */
+    .detail-grid{
+        display:grid;
+        grid-template-columns: minmax(0, 2fr) minmax(320px, 1fr);
+        gap:12px;
+        align-items:start;
+    }
+    @media (max-width: 980px){
+        .detail-grid{ grid-template-columns: 1fr; }
+    }
+
+    .box{
+        border:1px solid var(--line);
+        border-radius:12px;
+        background:#fff;
+        box-shadow:0 10px 24px rgba(31,45,61,.06);
+        overflow:hidden;
+    }
+    .box-hd{
+        padding:10px 12px;
+        background:linear-gradient(180deg,#f7fbff 0%, #f3f8ff 100%);
+        border-bottom:1px solid var(--line);
+        font-weight:1000;
+        color:#223246;
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        gap:10px;
+    }
+    .box-bd{ padding:12px; }
+
+    .q-body{font-size:15px;line-height:1.75;color:#1f2d3d;}
+    .q-body img{max-width:100%;height:auto;border-radius:8px;border:1px solid var(--line);}
+
+    .kv{display:grid;grid-template-columns:92px 1fr;gap:8px 12px;align-items:start;}
+    .kv .k{color:var(--muted);font-weight:900;text-align:right;white-space:nowrap;}
+    .kv .v{color:var(--text);word-break:break-word;font-weight:900;}
+
+    .analysis{
+        margin-top:10px;
+        padding:10px 12px 10px 14px;border-radius:10px;
+        background:linear-gradient(180deg, rgba(47,128,237,.10) 0%, rgba(47,128,237,.06) 100%);
+        border:1px solid rgba(47,128,237,.20);border-left:4px solid var(--brand);
+    }
+    .analysis-none{
+        margin-top:10px;
+        padding:10px 12px;border-radius:10px;background:#fff;border:1px dashed #d7dfe8;
+        color:var(--muted);font-weight:700;
+    }
+
+    /* 右侧内部小分区（答案/解析） */
+    .subsec + .subsec{ margin-top:12px; }
+    .subttl{
+        font-weight:1000;color:var(--text);
+        margin:0 0 8px;
+        display:flex;align-items:center;gap:8px;
+    }
+    .subttl:before{
+        content:"";width:6px;height:6px;border-radius:2px;
+        background:rgba(47,128,237,.30);border:1px solid rgba(47,128,237,.35);
+    }
+
+    @media (max-width:768px){
+        .page-wrap{padding:14px;}
+        .page-title{flex-direction:column;align-items:flex-start;}
+        .score-meta{text-align:left;white-space:normal;}
+        .kv{grid-template-columns:76px 1fr;}
+        .summary-table th,.summary-table td{padding:8px;}
+    }
+</style>
+
+<div class="page-wrap">
+    <div class="page-title">
+        <h2>{{ exam.name }} - 考试结果</h2>
+        <div class="score-meta">
+            <span class="score-badge">本次得分 <span class="score-num">{{ total_score }}</span></span>
+            {% if computed_total is not none and computed_total != total_score %}
+                <span class="debug-tip">（调试：按当前题库重新计算为 {{ computed_total }}）</span>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="section-title">结果汇总（点击题目行展开详情）</div>
+
+    <div class="summary-card">
+        <table class="summary-table" id="summaryTable">
+            <thead>
+            <tr>
+                <th style="width:92px;">题号</th>
+                <th>正确情况</th>
+                <th style="width:110px;">得分</th>
+            </tr>
+            </thead>
+
+            <tbody>
+            {% for r in results %}
+            <tr class="q-row" data-q="{{ r.display_no }}">
+                <td>
+                    <button class="row-btn" type="button" aria-expanded="false">
+                        <span class="q-pill">第 {{ r.display_no }} 题</span>
+                    </button>
+                </td>
+                <td>
+                    {% if r.is_correct == 1 %}
+                        <span class="badge-status badge-correct">正确</span>
+                    {% elif r.is_correct == 2 %}
+                        <span class="badge-status badge-partial">部分正确</span>
+                    {% else %}
+                        <span class="badge-status badge-wrong">错误</span>
+                    {% endif %}
+                </td>
+                <td style="font-weight:1000;color:var(--text);">{{ r.score }}</td>
+            </tr>
+
+            <tr class="detail-row" data-detail-for="{{ r.display_no }}">
+                <td colspan="3">
+                    <div class="detail-wrap">
+                        <div class="detail-panel">
+                            <div class="detail-grid">
+                                <!-- 左：题目（更宽，阅读自然） -->
+                                <div class="box">
+                                    <div class="box-hd">
+                                        <span>题目（第 {{ r.display_no }} 题）</span>
+                                    </div>
+                                    <div class="box-bd">
+                                        <div class="q-body">{{ r.content | safe }}</div>
+                                    </div>
+                                </div>
+
+                                <!-- 右：答案 + 解析（整页自然滚动，不做内部滚动） -->
+                                <div class="box">
+                                    <div class="box-hd">
+                                        <span>答案与解析</span>
+                                        <span style="font-weight:1000;color:var(--brand2);">得分：{{ r.score }}</span>
+                                    </div>
+                                    <div class="box-bd">
+                                        <div class="subsec">
+                                            <div class="subttl">答案</div>
+                                            <div class="kv">
+                                                <div class="k">正确答案</div>
+                                                <div class="v">{{ r.correct_answer }}</div>
+                                                <div class="k">你的答案</div>
+                                                <div class="v">{{ r.user_answer }}</div>
+                                            </div>
+                                        </div>
+
+                                        <div class="subsec">
+                                            <div class="subttl">解析</div>
+                                            {% if r.analysis %}
+                                                <div class="analysis">
+                                                    <div>{{ r.analysis | safe }}</div>
+                                                </div>
+                                            {% else %}
+                                                <div class="analysis-none">无</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div><!-- /detail-grid -->
+                        </div><!-- /detail-panel -->
+                    </div><!-- /detail-wrap -->
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+
+            <tfoot>
+            <tr>
+                <td colspan="2" style="text-align:right;">总分</td>
+                <td style="color:var(--brand);font-size:20px;font-weight:1000;">{{ total_score }}</td>
+            </tr>
+            </tfoot>
+        </table>
+    </div>
+
+    <div class="actions">
+        <a href="/exam_list" class="btn-custom-new">返回试卷列表</a>
+        <button id="toggleAllBtn" class="btn-ghost" type="button" data-open="0">全部展开</button>
+    </div>
+</div>
+
+<script>
+(function(){
+    const table = document.getElementById('summaryTable');
+    const toggleAllBtn = document.getElementById('toggleAllBtn');
+
+    function detailRowOf(q){
+        return table.querySelector(`tr.detail-row[data-detail-for="${CSS.escape(q)}"]`);
+    }
+    function wrapOf(dRow){ return dRow ? dRow.querySelector('.detail-wrap') : null; }
+
+    function openOne(q){
+        const qRow = table.querySelector(`tr.q-row[data-q="${CSS.escape(q)}"]`);
+        const dRow = detailRowOf(q);
+        const wrap = wrapOf(dRow);
+        if(!qRow || !dRow || !wrap) return;
+
+        qRow.classList.add('is-open');
+        dRow.classList.add('is-open');
+
+        const btn = qRow.querySelector('.row-btn');
+        if(btn) btn.setAttribute('aria-expanded', 'true');
+
+        // 滑动展开：用 scrollHeight 设 max-height
+        wrap.style.maxHeight = wrap.scrollHeight + 'px';
+    }
+
+    function closeOne(q){
+        const qRow = table.querySelector(`tr.q-row[data-q="${CSS.escape(q)}"]`);
+        const dRow = detailRowOf(q);
+        const wrap = wrapOf(dRow);
+        if(!qRow || !dRow || !wrap) return;
+
+        qRow.classList.remove('is-open');
+        dRow.classList.remove('is-open');
+
+        const btn = qRow.querySelector('.row-btn');
+        if(btn) btn.setAttribute('aria-expanded', 'false');
+
+        wrap.style.maxHeight = '0px';
+    }
+
+    function isOpen(q){
+        const dRow = detailRowOf(q);
+        return dRow && dRow.classList.contains('is-open');
+    }
+
+    function updateAllBtn(){
+        const rows = Array.from(table.querySelectorAll('tbody tr.q-row'));
+        const openCount = rows.filter(r => isOpen(r.dataset.q)).length;
+        const allOpen = openCount === rows.length && rows.length > 0;
+        toggleAllBtn.dataset.open = allOpen ? '1' : '0';
+        toggleAllBtn.textContent = allOpen ? '全部收起' : '全部展开';
+    }
+
+    function setAll(open){
+        const rows = table.querySelectorAll('tbody tr.q-row');
+        rows.forEach(r => open ? openOne(r.dataset.q) : closeOne(r.dataset.q));
+        updateAllBtn();
+    }
+
+    // 初始化：全部收起
+    table.querySelectorAll('tr.detail-row .detail-wrap').forEach(w => w.style.maxHeight = '0px');
+    updateAllBtn();
+
+    // 点击整行展开/收起
+    table.addEventListener('click', (e)=>{
+        const qRow = e.target.closest('tr.q-row');
+        if(!qRow) return;
+
+        const q = qRow.dataset.q;
+        if(isOpen(q)) closeOne(q);
+        else openOne(q);
+
+        updateAllBtn();
+    });
+
+    toggleAllBtn.addEventListener('click', ()=>{
+        const open = toggleAllBtn.dataset.open === '1';
+        setAll(!open);
+    });
+
+    // 图片/字体加载会改变高度：展开状态下重新计算 max-height，避免截断
+    function refreshOpenHeights(){
+        const openRows = table.querySelectorAll('tr.detail-row.is-open');
+        openRows.forEach(dRow=>{
+            const wrap = wrapOf(dRow);
+            if(wrap) wrap.style.maxHeight = wrap.scrollHeight + 'px';
+        });
+    }
+    window.addEventListener('load', refreshOpenHeights);
+    window.addEventListener('resize', refreshOpenHeights);
+})();
+</script>
+{% endblock %}

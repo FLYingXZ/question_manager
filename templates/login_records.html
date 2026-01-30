@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>登录记录</title>
+    <script src="{{ url_for('static', filename='jquery/3.6.0/jquery.min.js') }}"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/5.2.3/bootstrap.min.css') }}">
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        table,
+        th,
+        td {
+            border: 1px solid black;
+        }
+
+        th,
+        td {
+            padding: 10px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .pagination button {
+            margin: 0 5px;
+            padding: 5px 10px;
+        }
+    </style>
+</head>
+
+<body>
+
+    {% extends 'header.html' %}
+    {% block content %}
+    <div class='container'>
+        <h2>登录记录</h2>
+        <table id="loginRecordsTable">
+            <thead>
+                <tr>
+                    <th>用户名</th>
+                    <th>IP地址</th>
+                    <th>登录时间</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- 通过JavaScript动态填充登录记录 -->
+            </tbody>
+        </table>
+        <div class="pagination" id="pagination">
+            <!-- 分页按钮 -->
+        </div>
+    </div>
+    <script>
+        $(document).ready(function() {
+            function loadRecords(page) {
+                $.ajax({
+                    url: "/get_login_records",
+                    type: "GET",
+                    data: {
+                        page: page,
+                        per_page: 500
+                    },
+                    success: function(data) {
+                        var recordsHtml = "";
+                        $.each(data.records, function(index, record) {
+                            recordsHtml += "<tr>" +
+                                "<td>" + record.username + "</td>" +
+                                "<td>" + record.ip_address + "</td>" +
+                                "<td>" + record.login_time + "</td>" +
+                                "</tr>";
+                        });
+                        $("#loginRecordsTable tbody").html(recordsHtml);
+
+                        // 生成分页按钮
+                        var paginationHtml = "";
+                        for (var i = 1; i <= data.total_pages; i++) {
+                            paginationHtml += "<button class='page-button' data-page='" + i + "'>" + i + "</button>";
+                        }
+                        $("#pagination").html(paginationHtml);
+
+                        // 添加分页按钮点击事件
+                        $(".page-button").click(function() {
+                            var page = $(this).data("page");
+                            loadRecords(page);
+                        });
+                    },
+                    error: function() {
+                        alert("获取登录记录时发生错误，请确保您已登录并且后端服务正常运行。");
+                    }
+                });
+            }
+
+            // 加载第一页记录
+            loadRecords(1);
+        });
+    </script>
+    {% endblock %}
+</body>
+
+</html>

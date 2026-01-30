@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>导出 Word 示例</title>
+</head>
+<body>
+<div id="a">
+<p>编写一个python程序对学校的所有空教室进行管理，当有新的使用申请时，将分配一个空教室使用，使用结束后归还教室，若已无空教室则申请失败。现在请模拟这一过程。</p><p>程序输入n表示初始有n个空教室，输入列表b表示一系列的请求，每个请求包括请求时刻、请求类型（申请或归还）和请求人。程序需要输出对于每次请求的处理结果，包括请求时刻、申请或归还的教室编号、请求结果、请求人。</p><p>在程序中，利用链表存储已被申请的教室，利用栈存储空教室。</p><p>
+</p><p>例，当前有3个空教室，输入如第15题图a所示，输出如第15题图b所示。</p><p><img src="_uploads/photos/TcROBE02D6tWrOQe.png" style="width: 287.003px;">&nbsp; &nbsp; &nbsp; &nbsp;<img src="_uploads/photos/eAYulrHyfFZs7JmL.png" style="width: 365px;"><br></p><p>（1）以3个空教室为例，对于以下输入数据，请求失败的人数是&nbsp;&nbsp;&nbsp;&nbsp; 。</p><p>1,申请,张三</p><p>3,申请,李四</p><p>4,归还,李四</p><p>5,申请,王五</p><p>5,申请,赵六</p><p>7,申请,孙七</p><p>（2）请修改程序加框处的错误</p><p>（3）请完成划线处的填空</p><p>（4）由程序中可知，若n = 20，则stack和node列表的长度需至少修改为&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 。</p><p>def adj(string):</p><p>&nbsp;&nbsp;&nbsp; #adj函数用于输出时的对齐，代码略</p><p>requests = []</p><p>#输入空教室数n，所有请求输入后保存在requests中，代码略</p><p>#其中requests[i]表示第i个请求</p><p>#requests[i][0]表示时刻#</p><p>#requests[i][1]表示请求类型（申请或归还），</p><p>#requests[i][2]表示请求人</p><p>top = n; stack = [i for i in range(10)] &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #定义栈，存储空教室编号</p><p>head = -1; node = [[i, -1, -1] for i in range(10)]  #定义链表，存储可用教室</p><p>def apply(name): &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #申请，从栈中弹出空教室添加至链表，并将请求人作为链表节点的内容</p><p>&nbsp;&nbsp;&nbsp; global top, head &nbsp; #声明top和head为函数外部的全局变量，下同</p><p>&nbsp;&nbsp;&nbsp; if top==0: return -1</p><p>&nbsp;&nbsp;&nbsp; node[stack[top]][1] = name</p><p>&nbsp;&nbsp;&nbsp; node[stack[top]][2] = head</p><p>&nbsp;&nbsp;&nbsp; <u>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;①&nbsp;&nbsp;&nbsp;&nbsp; </u></p><p>&nbsp;&nbsp;&nbsp; top -= 1</p><p>&nbsp;&nbsp;&nbsp; return head</p><p>def back(name): &nbsp; #归还，在链表中找到请求人所在的节点，删除后压入栈中</p><p>&nbsp;&nbsp;&nbsp; global top, head</p><p>&nbsp;&nbsp;&nbsp; p = head</p><p>&nbsp;&nbsp;&nbsp; if node[p][1]==name:</p><p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; top += 1; stack[top] = head</p><p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; head = node[head][2]</p><p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+return stack[top]</p><p>&nbsp;&nbsp;&nbsp; while&nbsp;&nbsp;<span style="border:solid windowtext 1.0pt;mso-border-alt:solid windowtext .5pt;
+padding:0cm">node[p][1]!=name</span>&nbsp; and node[p][2]!=-1:</p><p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; p = node[p][2]</p><p>&nbsp;&nbsp;&nbsp; if node[p][2]==-1: return -1</p><p>&nbsp;&nbsp;&nbsp; top += 1; stack[top] = node[p][2]</p><p>&nbsp;&nbsp;&nbsp;
+node[p][2] = node[node[p][2]][2]</p><p>&nbsp;&nbsp;&nbsp; return <u>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;②&nbsp;&nbsp;&nbsp;&nbsp; </u></p><p>print("时刻 教室编号&nbsp; 请求结果&nbsp;&nbsp; 请求人")</p><p>for i in requests:</p><p>&nbsp;&nbsp;&nbsp;
+print(adj(i[0]), end = "")</p><p>&nbsp;&nbsp;&nbsp; if i[1]=="申请":</p><p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; c = apply(i[2])</p><p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; if <u>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;③&nbsp;&nbsp;&nbsp;&nbsp; </u>:</p><p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;print("教室已满，申请失败！")</p><p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; else:</p><p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;print(adj("教室"+str(node[c][0])),adj("已申请"), i[2])</p><p>&nbsp;&nbsp;&nbsp; elif i[1]=="归还":</p><p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; c = back(i[2])</p><p></p><p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; if c!=-1: print(adj("教室"+str(node[c][0])),adj("已归还"), i[2])</p>
+</div>
+<input type="button" value="导出word">
+<script src="{{ url_for('static', filename='export_docx/jquery.js') }}"></script>
+<script src="{{ url_for('static', filename='export_docx/FileSaver.js') }}"></script>
+<script src="{{ url_for('static', filename='export_docx/jquery.wordexport.js') }}"></script>
+<script>
+    // 将页面中的图片转换为 Base64
+    function convertImageToBase64(imgElement) {
+        const img = new Image();
+        img.crossOrigin = 'Anonymous'; // 处理跨域问题
+        img.src = imgElement.src;
+
+        img.onload = function () {
+            const canvas = document.createElement("canvas");
+            canvas.width = img.width;
+            canvas.height = img.height;
+            const ctx = canvas.getContext("2d");
+            ctx.drawImage(img, 0, 0, img.width, img.height);
+            
+            // 将图像转换为 Base64 并设置为 img 标签的 src
+            imgElement.src = canvas.toDataURL("image/png");
+        };
+    }
+
+    // 页面加载后立即转换图片
+    $(document).ready(function() {
+        const imgElements = $("#a img");
+        imgElements.each(function() {
+            convertImageToBase64(this);
+        });
+    });
+
+
+    // 导出功能
+    $(function () {
+        $("input[type='button']").click(function (event) {
+            $("#a").wordExport('word文档');
+        });
+    });
+</script>
+</body>
+</html>

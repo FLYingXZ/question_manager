@@ -1,0 +1,297 @@
+{% extends "header.html" %}
+{% block content %}
+
+<style>
+  .admin-blog-wrapper {
+    padding: 24px 28px 32px;
+    background: #f8fafc;
+  }
+
+  .admin-blog-title {
+    font-size: 24px;
+    font-weight: 600;
+    color: #2c3e50;
+  }
+
+  .admin-search-card {
+    background: #ffffff;
+    border-radius: 8px;
+    padding: 14px 18px;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+    border: 1px solid #e5e9f2;
+    margin-bottom: 18px;
+  }
+
+  .admin-search-label {
+    font-size: 13px;
+    color: #6b7280;
+    margin-bottom: 4px;
+  }
+
+  .form-control:focus {
+    box-shadow: 0 0 0 .15rem rgba(52, 152, 219, .25);
+    border-color: #3498db;
+  }
+
+  .btn-search {
+    background: #3498db;
+    border: none;
+  }
+
+  .btn-search:hover {
+    background: #2980b9;
+  }
+
+  .admin-card {
+    border-radius: 8px;
+    border: 1px solid #e5e9f2;
+    box-shadow: 0 3px 10px rgba(15, 23, 42, 0.06);
+    transition: all .15s ease;
+    overflow: hidden;
+  }
+
+  .admin-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(15, 23, 42, 0.12);
+  }
+
+  .admin-card .card-body {
+    padding: 14px 14px 10px;
+  }
+
+  .admin-card-title a {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1f2933;
+    text-decoration: none;
+  }
+
+  .admin-card-title a:hover {
+    color: #3498db;
+  }
+
+  .admin-meta {
+    font-size: 12px;
+    color: #9ca3af;
+  }
+
+  .admin-meta strong {
+    color: #6b7280;
+  }
+
+  .badge-tag {
+    background: rgba(52, 152, 219, 0.12);
+    color: #1d4ed8;
+    border-radius: 999px;
+    padding: 3px 8px;
+    font-size: 11px;
+  }
+
+  .btn-danger-soft {
+    background: #fee2e2;
+    color: #b91c1c;
+    border: none;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 13px;
+  }
+
+  .btn-danger-soft:hover {
+    background: #fecaca;
+  }
+
+  .admin-tools {
+    font-size: 12px;
+    color: #9ca3af;
+  }
+
+  .pagination > li > a,
+  .pagination > li > span {
+    color: #3498db;
+  }
+
+  .pagination .page-item.active .page-link {
+    background-color: #3498db;
+    border-color: #3498db;
+  }
+
+  .pagination .page-link {
+    border-radius: 999px;
+    margin: 0 3px;
+  }
+
+  @media (max-width: 768px) {
+    .admin-blog-wrapper {
+      padding: 16px 12px 24px;
+    }
+  }
+</style>
+
+<div class="admin-blog-wrapper">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="admin-blog-title mb-0">博客管理</h1>
+    <div class="admin-tools">
+      共 {{ pagination.total or blogs|length }} 篇 · 仅管理员 / 教师可见
+    </div>
+  </div>
+
+  <!-- 搜索卡片 -->
+  <div class="admin-search-card">
+    <form method="get">
+      <div class="row g-3 align-items-end">
+        <div class="col-md-3">
+          <label class="admin-search-label">关键字</label>
+          <input type="text" name="keyword" class="form-control"
+                 placeholder="标题 / 内容"
+                 value="{{ request.args.get('keyword', '') }}">
+        </div>
+        <div class="col-md-3">
+          <label class="admin-search-label">分类</label>
+          <input type="text" name="category" class="form-control"
+                 placeholder="分类"
+                 value="{{ request.args.get('category', '') }}">
+        </div>
+        <div class="col-md-3">
+          <label class="admin-search-label">作者</label>
+          <input type="text" name="author" class="form-control"
+                 placeholder="作者用户名"
+                 value="{{ request.args.get('author', '') }}">
+        </div>
+        <div class="col-md-3 d-grid">
+          <button type="submit" class="btn btn-primary btn-search">
+            <i class="fa fa-filter me-1"></i> 搜索
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  {% if blogs %}
+  <div class="row">
+    {% for blog in blogs %}
+    <div class="col-md-4 mb-4">
+      <div class="card admin-card h-100">
+        <div class="card-body d-flex flex-column">
+          <div class="d-flex justify-content-between align-items-start mb-1">
+            <h5 class="card-title admin-card-title mb-0">
+              <a href="{{ url_for('blog_detail', blog_id=blog.id) }}">
+                {{ blog.title }}
+              </a>
+            </h5>
+            {% if not blog.is_public %}
+            <span class="badge bg-secondary ms-2">私有</span>
+            {% endif %}
+          </div>
+
+          <p class="admin-meta mb-1">
+            <i class="fa-regular fa-clock me-1"></i>{{ blog.create_time }}
+          </p>
+          <p class="admin-meta mb-1">
+            <strong>作者：</strong>{{ blog.author.username }}
+            &nbsp; | &nbsp;
+            <strong>分类：</strong>{{ blog.category or '未分类' }}
+          </p>
+
+          <p class="mb-2">
+            <strong class="admin-meta">标签：</strong>
+            {% if blog.tags %}
+              {% for tag in blog.tags.split(",") %}
+              <span class="badge badge-tag me-1 mb-1">{{ tag.strip() }}</span>
+              {% endfor %}
+            {% else %}
+              <span class="admin-meta">无</span>
+            {% endif %}
+          </p>
+
+          <div class="mt-auto pt-2 d-flex justify-content-between align-items-center">
+            <span class="admin-meta">
+              <i class="fa fa-eye"></i> {{ blog.view_count }}
+              &nbsp;&nbsp;
+              <i class="fa fa-thumbs-up"></i> {{ blog.like_count }}
+            </span>
+            <button class="btn-danger-soft"
+                    onclick="deleteBlog({{ blog.id }})">
+              <i class="fa fa-trash-alt me-1"></i> 删除
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="text-center text-muted py-5">
+    暂无博客。
+  </div>
+  {% endif %}
+
+  {% if pagination.pages > 1 %}
+  <nav aria-label="Page navigation">
+    <ul class="pagination justify-content-center mt-2">
+      <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+        <a class="page-link"
+           href="{% if pagination.has_prev %}{{ url_for('admin_blog_list',
+                   page=pagination.prev_num,
+                   keyword=request.args.get('keyword', ''),
+                   category=request.args.get('category', ''),
+                   author=request.args.get('author', '')) }}{% else %}#{% endif %}">
+          上一页
+        </a>
+      </li>
+
+      {% for page_num in pagination.iter_pages(left_edge=1,right_edge=1,left_current=2,right_current=2) %}
+        {% if page_num %}
+          <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
+            <a class="page-link"
+               href="{{ url_for('admin_blog_list', page=page_num,
+                                keyword=request.args.get('keyword', ''),
+                                category=request.args.get('category', ''),
+                                author=request.args.get('author', '')) }}">
+              {{ page_num }}
+            </a>
+          </li>
+        {% else %}
+          <li class="page-item disabled"><span class="page-link">…</span></li>
+        {% endif %}
+      {% endfor %}
+
+      <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+        <a class="page-link"
+           href="{% if pagination.has_next %}{{ url_for('admin_blog_list',
+                   page=pagination.next_num,
+                   keyword=request.args.get('keyword', ''),
+                   category=request.args.get('category', ''),
+                   author=request.args.get('author', '')) }}{% else %}#{% endif %}">
+          下一页
+        </a>
+      </li>
+    </ul>
+  </nav>
+  {% endif %}
+</div>
+
+<script>
+  function deleteBlog(blogId) {
+    if (!confirm("确定要删除这篇博客吗？")) return;
+
+    fetch(`/admin/blogs/${blogId}/delete`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    })
+      .then(response => response.json())
+      .then(data => {
+        if (data.message === '博客已删除') {
+          alert('删除成功');
+          location.reload();
+        } else {
+          alert('删除失败: ' + (data.message || '未知错误'));
+        }
+      })
+      .catch(error => {
+        console.error('删除时发生错误：', error);
+        alert('删除失败，请稍后再试。');
+      });
+  }
+</script>
+
+{% endblock %}

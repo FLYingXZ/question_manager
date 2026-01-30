@@ -1,0 +1,1274 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI配置管理 - {{ config.APP_NAME }}</title>
+    <style>
+        :root {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-tertiary: #334155;
+            --text-primary: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --accent-primary: #3b82f6;
+            --accent-hover: #2563eb;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --error-color: #ef4444;
+            --border-color: #475569;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+        
+        .config-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            font-weight: 600;
+        }
+        
+        .nav-back {
+            color: var(--text-secondary);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: color 0.2s;
+        }
+        
+        .nav-back:hover {
+            color: var(--text-primary);
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .tab {
+            padding: 12px 24px;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .tab.active {
+            color: var(--accent-primary);
+            border-bottom-color: var(--accent-primary);
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .section-header h2 {
+            font-size: 20px;
+            font-weight: 600;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: background-color 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-primary {
+            background-color: var(--accent-primary);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: var(--accent-hover);
+        }
+        
+        .btn-success {
+            background-color: var(--success-color);
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background-color: #059669;
+        }
+        
+        .btn-warning {
+            background-color: var(--warning-color);
+            color: white;
+        }
+        
+        .btn-warning:hover {
+            background-color: #d97706;
+        }
+        
+        .btn-danger {
+            background-color: var(--error-color);
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background-color: #dc2626;
+        }
+        
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+        }
+        
+        .btn-outline:hover {
+            background-color: var(--bg-tertiary);
+        }
+        
+        .table-container {
+            background-color: var(--bg-secondary);
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th, td {
+            padding: 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        th {
+            background-color: var(--bg-tertiary);
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+        
+        tr:last-child td {
+            border-bottom: none;
+        }
+        
+        tr:hover {
+            background-color: var(--bg-tertiary);
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .status-active {
+            background-color: rgba(16, 185, 129, 0.2);
+            color: var(--success-color);
+        }
+        
+        .status-inactive {
+            background-color: rgba(107, 114, 128, 0.2);
+            color: var(--text-secondary);
+        }
+        
+        .actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .action-btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: background-color 0.2s;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-secondary);
+        }
+        
+        .empty-state p {
+            margin-bottom: 20px;
+        }
+        
+        /* 模态框样式 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal.active {
+            display: flex;
+        }
+        
+        .modal-content {
+            background-color: var(--bg-secondary);
+            border-radius: 8px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+        }
+        
+        .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-header h3 {
+            font-size: 18px;
+            font-weight: 600;
+        }
+        
+        .close-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 20px;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+        }
+        
+        .close-btn:hover {
+            background-color: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+        
+        .modal-body {
+            padding: 20px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 12px;
+            background-color: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-size: 14px;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+        }
+        
+        .form-text {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 6px;
+        }
+        
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .checkbox-group input {
+            width: 18px;
+            height: 18px;
+        }
+        
+        .form-row {
+            display: flex;
+            gap: 15px;
+        }
+        
+        .form-row .form-group {
+            flex: 1;
+        }
+        
+        .modal-footer {
+            padding: 20px;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+        
+        .variables-container {
+            margin-top: 10px;
+        }
+        
+        .variable-item {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+        
+        .variable-input {
+            flex: 1;
+            padding: 8px 12px;
+            background-color: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            color: var(--text-primary);
+        }
+        
+        .remove-variable {
+            background: none;
+            border: none;
+            color: var(--error-color);
+            cursor: pointer;
+            padding: 6px;
+            border-radius: 4px;
+        }
+        
+        .remove-variable:hover {
+            background-color: rgba(239, 68, 68, 0.2);
+        }
+        
+        .add-variable {
+            background: none;
+            border: 1px dashed var(--border-color);
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 8px 12px;
+            border-radius: 4px;
+            width: 100%;
+            transition: all 0.2s;
+        }
+        
+        .add-variable:hover {
+            border-color: var(--accent-primary);
+            color: var(--accent-primary);
+        }
+        
+        /* 权限控制样式 */
+        .permissions-group {
+            margin-top: 10px;
+        }
+        
+        .permissions-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 10px;
+        }
+        
+        .permission-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex: 1;
+            min-width: 120px;
+        }
+        
+        .permission-item label {
+            margin-bottom: 0;
+            font-weight: normal;
+            cursor: pointer;
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .config-container {
+                padding: 10px;
+            }
+            
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+            
+            .tabs {
+                flex-wrap: wrap;
+            }
+            
+            .section-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+            
+            .form-row {
+                flex-direction: column;
+                gap: 0;
+            }
+            
+            .permissions-row {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .permission-item {
+                min-width: auto;
+            }
+            
+            table {
+                display: block;
+                overflow-x: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="config-container">
+        <div class="header">
+            <h1>AI配置管理</h1>
+            <a href="{{ url_for('ai_chat') }}" class="nav-back">
+                <span>←</span> 返回聊天界面
+            </a>
+        </div>
+        
+        <div class="tabs">
+            <button class="tab active" data-tab="models">模型配置</button>
+            <button class="tab" data-tab="templates">Prompt模板</button>
+            <button class="tab" data-tab="api-keys">API密钥</button>
+        </div>
+        
+        <!-- 模型配置标签页 -->
+        <div class="tab-content active" id="models-tab">
+            <div class="section-header">
+                <h2>AI模型配置</h2>
+                <button class="btn btn-primary" onclick="openModelModal()">
+                    <span>+</span> 添加模型
+                </button>
+            </div>
+            
+            <div class="table-container">
+                <table id="models-table">
+                    <thead>
+                        <tr>
+                            <th>名称</th>
+                            <th>模型名称</th>
+                            <th>API URL</th>
+                            <th>允许角色</th>
+                            <th>需要登录</th>
+                            <th>优先级</th>
+                            <th>状态</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="models-tbody">
+                        <!-- 动态加载 -->
+                    </tbody>
+                </table>
+                
+                <div class="empty-state" id="models-empty" style="display: none;">
+                    <p>暂无模型配置</p>
+                    <button class="btn btn-primary" onclick="openModelModal()">添加第一个模型</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Prompt模板标签页 -->
+        <div class="tab-content" id="templates-tab">
+            <div class="section-header">
+                <h2>Prompt模板配置</h2>
+                <button class="btn btn-primary" onclick="openTemplateModal()">
+                    <span>+</span> 添加模板
+                </button>
+            </div>
+            
+            <div class="table-container">
+                <table id="templates-table">
+                    <thead>
+                        <tr>
+                            <th>名称</th>
+                            <th>描述</th>
+                            <th>变量</th>
+                            <th>状态</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="templates-tbody">
+                        <!-- 动态加载 -->
+                    </tbody>
+                </table>
+                
+                <div class="empty-state" id="templates-empty" style="display: none;">
+                    <p>暂无Prompt模板</p>
+                    <button class="btn btn-primary" onclick="openTemplateModal()">添加第一个模板</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- API密钥标签页 -->
+        <div class="tab-content" id="api-keys-tab">
+            <div class="section-header">
+                <h2>API密钥配置</h2>
+                <button class="btn btn-primary" onclick="openApiKeyModal()">
+                    <span>+</span> 添加密钥
+                </button>
+            </div>
+            
+            <div class="table-container">
+                <table id="api-keys-table">
+                    <thead>
+                        <tr>
+                            <th>提供商</th>
+                            <th>API密钥</th>
+                            <th>状态</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="api-keys-tbody">
+                        <!-- 动态加载 -->
+                    </tbody>
+                </table>
+                
+                <div class="empty-state" id="api-keys-empty" style="display: none;">
+                    <p>暂无API密钥</p>
+                    <button class="btn btn-primary" onclick="openApiKeyModal()">添加第一个密钥</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 模型配置模态框 -->
+    <div class="modal" id="model-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="model-modal-title">添加模型</h3>
+                <button class="close-btn" onclick="closeModelModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="model-form">
+                    <input type="hidden" id="model-id">
+                    <div class="form-group">
+                        <label for="model-name">模型名称 *</label>
+                        <input type="text" id="model-name" class="form-control" required>
+                        <div class="form-text">显示给用户的名称，如 "GPT-4"</div>
+                    </div>
+                    <div class="form-group">
+                        <label for="model-api-url">API URL *</label>
+                        <input type="url" id="model-api-url" class="form-control" required>
+                        <div class="form-text">API端点地址，如 https://api.chatanywhere.tech/v1/chat/completions</div>
+                    </div>
+                    <div class="form-group">
+                        <label for="model-model-name">模型标识 *</label>
+                        <input type="text" id="model-model-name" class="form-control" required>
+                        <div class="form-text">API中使用的模型标识，如 "gpt-4"</div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="model-max-tokens">最大Token</label>
+                            <input type="number" id="model-max-tokens" class="form-control" value="4000">
+                            <div class="form-text">单次请求最大token数量</div>
+                        </div>
+                        <div class="form-group">
+                            <label for="model-temperature">温度</label>
+                            <input type="number" id="model-temperature" class="form-control" step="0.1" min="0" max="2" value="0.7">
+                            <div class="form-text">控制生成文本的随机性 (0-2)</div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="model-priority">优先级</label>
+                        <input type="number" id="model-priority" class="form-control" value="0">
+                        <div class="form-text">数值越大，在列表中显示越靠前</div>
+                    </div>
+                    <div class="form-group">
+                        <label>权限控制</label>
+                        <div class="permissions-group">
+                            <div class="permissions-row">
+                                <div class="permission-item">
+                                    <input type="checkbox" id="model-role-admin" value="admin" checked>
+                                    <label for="model-role-admin">管理员</label>
+                                </div>
+                                <div class="permission-item">
+                                    <input type="checkbox" id="model-role-teacher" value="teacher" checked>
+                                    <label for="model-role-teacher">教师</label>
+                                </div>
+                                <div class="permission-item">
+                                    <input type="checkbox" id="model-role-student" value="student" checked>
+                                    <label for="model-role-student">学生</label>
+                                </div>
+                            </div>
+                            <div class="permissions-row">
+                                <div class="permission-item">
+                                    <input type="checkbox" id="model-role-user" value="user" checked>
+                                    <label for="model-role-user">普通用户</label>
+                                </div>
+                                <div class="permission-item">
+                                    <input type="checkbox" id="model-role-guest" value="guest">
+                                    <label for="model-role-guest">未登录用户</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-text">选择允许使用该模型的用户角色</div>
+                    </div>
+                    <div class="form-group">
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="model-require-login" checked>
+                            <label for="model-require-login">需要登录才能使用</label>
+                        </div>
+                        <div class="form-text">如果启用，未登录用户将无法使用此模型，即使勾选了"未登录用户"</div>
+                    </div>
+                    <div class="form-group">
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="model-is-active" checked>
+                            <label for="model-is-active">启用此模型</label>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeModelModal()">取消</button>
+                <button class="btn btn-primary" onclick="saveModel()">保存</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Prompt模板模态框 -->
+    <div class="modal" id="template-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="template-modal-title">添加Prompt模板</h3>
+                <button class="close-btn" onclick="closeTemplateModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="template-form">
+                    <input type="hidden" id="template-id">
+                    <div class="form-group">
+                        <label for="template-name">模板名称 *</label>
+                        <input type="text" id="template-name" class="form-control" required>
+                        <div class="form-text">模板的显示名称</div>
+                    </div>
+                    <div class="form-group">
+                        <label for="template-description">描述</label>
+                        <input type="text" id="template-description" class="form-control">
+                        <div class="form-text">模板的简要描述</div>
+                    </div>
+                    <div class="form-group">
+                        <label for="template-content">模板内容 *</label>
+                        <textarea id="template-content" class="form-control" rows="6" required></textarea>
+                        <div class="form-text">使用 {变量名} 格式定义变量，如: 请审查以下代码：{code}</div>
+                    </div>
+                    <div class="form-group">
+                        <label>变量定义</label>
+                        <div class="variables-container" id="variables-container">
+                            <!-- 动态生成的变量输入框 -->
+                        </div>
+                        <button type="button" class="add-variable" onclick="addVariable()">+ 添加变量</button>
+                        <div class="form-text">定义模板中使用的变量，用户在使用模板时需要提供这些变量的值</div>
+                    </div>
+                    <div class="form-group">
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="template-is-active" checked>
+                            <label for="template-is-active">启用此模板</label>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeTemplateModal()">取消</button>
+                <button class="btn btn-primary" onclick="saveTemplate()">保存</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- API密钥模态框 -->
+    <div class="modal" id="api-key-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="api-key-modal-title">添加API密钥</h3>
+                <button class="close-btn" onclick="closeApiKeyModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="api-key-form">
+                    <input type="hidden" id="api-key-id">
+                    <div class="form-group">
+                        <label for="api-key-provider">提供商 *</label>
+                        <input type="text" id="api-key-provider" class="form-control" required>
+                        <div class="form-text">API提供商，如 "OpenAI", "Azure" 等</div>
+                    </div>
+                    <div class="form-group">
+                        <label for="api-key-key">API密钥 *</label>
+                        <input type="password" id="api-key-key" class="form-control" required>
+                        <div class="form-text">API访问密钥，如 sk-...</div>
+                    </div>
+                    <div class="form-group">
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="api-key-is-active" checked>
+                            <label for="api-key-is-active">启用此密钥</label>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeApiKeyModal()">取消</button>
+                <button class="btn btn-primary" onclick="saveApiKey()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 全局变量
+        let currentEditingId = null;
+        
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 标签页切换
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.addEventListener('click', function() {
+                    // 移除所有active类
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                    
+                    // 添加active类到当前标签
+                    this.classList.add('active');
+                    const tabId = this.getAttribute('data-tab');
+                    document.getElementById(`${tabId}-tab`).classList.add('active');
+                    
+                    // 加载对应标签页的数据
+                    if (tabId === 'models') {
+                        loadModels();
+                    } else if (tabId === 'templates') {
+                        loadTemplates();
+                    } else if (tabId === 'api-keys') {
+                        loadApiKeys();
+                    }
+                });
+            });
+            
+            // 初始加载模型数据
+            loadModels();
+        });
+        
+        // 加载模型数据
+        async function loadModels() {
+            try {
+                const response = await fetch('/api/admin/ai/models');
+                const models = await response.json();
+                const tbody = document.getElementById('models-tbody');
+                const emptyState = document.getElementById('models-empty');
+                
+                if (models.length === 0) {
+                    tbody.innerHTML = '';
+                    emptyState.style.display = 'block';
+                    return;
+                }
+                
+                emptyState.style.display = 'none';
+                tbody.innerHTML = models.map(model => `
+                    <tr>
+                        <td>${model.name}</td>
+                        <td>${model.model_name}</td>
+                        <td title="${model.api_url}">${model.api_url.substring(0, 30)}...</td>
+                        <td>${(model.allowed_roles || []).join(', ')}</td>
+                        <td>${model.require_login ? '是' : '否'}</td>
+                        <td>${model.priority || 0}</td>
+                        <td>
+                            <span class="status-badge ${model.is_active ? 'status-active' : 'status-inactive'}">
+                                ${model.is_active ? '启用' : '禁用'}
+                            </span>
+                        </td>
+                        <td class="actions">
+                            <button class="action-btn btn-outline" onclick="editModel(${model.id})">编辑</button>
+                            <button class="action-btn btn-danger" onclick="deleteModel(${model.id})">删除</button>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                console.error('加载模型失败:', error);
+                alert('加载模型配置失败');
+            }
+        }
+        
+        // 打开模型模态框
+        function openModelModal(modelId = null) {
+            currentEditingId = modelId;
+            const modal = document.getElementById('model-modal');
+            const title = document.getElementById('model-modal-title');
+            const form = document.getElementById('model-form');
+            
+            if (modelId) {
+                title.textContent = '编辑模型';
+                // 填充现有数据
+                fetch(`/api/admin/ai/models`)
+                    .then(response => response.json())
+                    .then(models => {
+                        const model = models.find(m => m.id === modelId);
+                        if (model) {
+                            document.getElementById('model-id').value = model.id;
+                            document.getElementById('model-name').value = model.name;
+                            document.getElementById('model-api-url').value = model.api_url;
+                            document.getElementById('model-model-name').value = model.model_name;
+                            document.getElementById('model-max-tokens').value = model.max_tokens;
+                            document.getElementById('model-temperature').value = model.temperature;
+                            document.getElementById('model-priority').value = model.priority || 0;
+                            document.getElementById('model-require-login').checked = model.require_login;
+                            document.getElementById('model-is-active').checked = model.is_active;
+                            
+                            // 设置权限角色
+                            const allowedRoles = model.allowed_roles || [];
+                            document.querySelectorAll('input[type="checkbox"][value]').forEach(checkbox => {
+                                checkbox.checked = allowedRoles.includes(checkbox.value);
+                            });
+                        }
+                    });
+            } else {
+                title.textContent = '添加模型';
+                form.reset();
+                document.getElementById('model-is-active').checked = true;
+                document.getElementById('model-require-login').checked = true;
+                // 默认选中所有角色（除了guest）
+                document.querySelectorAll('input[type="checkbox"][value]').forEach(checkbox => {
+                    checkbox.checked = checkbox.value !== 'guest';
+                });
+            }
+            
+            modal.classList.add('active');
+        }
+        
+        // 关闭模型模态框
+        function closeModelModal() {
+            document.getElementById('model-modal').classList.remove('active');
+            currentEditingId = null;
+        }
+        
+        // 保存模型
+        async function saveModel() {
+            // 收集权限角色
+            const allowedRoles = Array.from(document.querySelectorAll('input[type="checkbox"][value]:checked'))
+                .map(checkbox => checkbox.value);
+            
+            const formData = {
+                name: document.getElementById('model-name').value,
+                api_url: document.getElementById('model-api-url').value,
+                model_name: document.getElementById('model-model-name').value,
+                max_tokens: parseInt(document.getElementById('model-max-tokens').value),
+                temperature: parseFloat(document.getElementById('model-temperature').value),
+                priority: parseInt(document.getElementById('model-priority').value) || 0,
+                allowed_roles: allowedRoles,
+                require_login: document.getElementById('model-require-login').checked,
+                is_active: document.getElementById('model-is-active').checked
+            };
+            
+            if (currentEditingId) {
+                formData.id = currentEditingId;
+            }
+            
+            try {
+                const response = await fetch('/api/admin/ai/models', {
+                    method: currentEditingId ? 'PUT' : 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                if (response.ok) {
+                    closeModelModal();
+                    loadModels();
+                    alert('保存成功');
+                } else {
+                    const error = await response.json();
+                    alert('保存失败: ' + (error.error || '未知错误'));
+                }
+            } catch (error) {
+                console.error('保存模型失败:', error);
+                alert('保存失败');
+            }
+        }
+        
+        // 编辑模型
+        function editModel(id) {
+            openModelModal(id);
+        }
+        
+        // 删除模型
+        async function deleteModel(id) {
+            if (!confirm('确定要删除这个模型吗？')) return;
+            
+            try {
+                const response = await fetch(`/api/admin/ai/models?id=${id}`, {
+                    method: 'DELETE'
+                });
+                
+                if (response.ok) {
+                    loadModels();
+                    alert('删除成功');
+                } else {
+                    alert('删除失败');
+                }
+            } catch (error) {
+                console.error('删除模型失败:', error);
+                alert('删除失败');
+            }
+        }
+        
+        // 加载模板数据
+        async function loadTemplates() {
+            try {
+                const response = await fetch('/api/admin/ai/templates');
+                const templates = await response.json();
+                const tbody = document.getElementById('templates-tbody');
+                const emptyState = document.getElementById('templates-empty');
+                
+                if (templates.length === 0) {
+                    tbody.innerHTML = '';
+                    emptyState.style.display = 'block';
+                    return;
+                }
+                
+                emptyState.style.display = 'none';
+                tbody.innerHTML = templates.map(template => `
+                    <tr>
+                        <td>${template.name}</td>
+                        <td>${template.description || '-'}</td>
+                        <td>${template.variables.length > 0 ? template.variables.join(', ') : '无'}</td>
+                        <td>
+                            <span class="status-badge ${template.is_active ? 'status-active' : 'status-inactive'}">
+                                ${template.is_active ? '启用' : '禁用'}
+                            </span>
+                        </td>
+                        <td class="actions">
+                            <button class="action-btn btn-outline" onclick="editTemplate(${template.id})">编辑</button>
+                            <button class="action-btn btn-danger" onclick="deleteTemplate(${template.id})">删除</button>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                console.error('加载模板失败:', error);
+                alert('加载模板配置失败');
+            }
+        }
+        
+        // 打开模板模态框
+        function openTemplateModal(templateId = null) {
+            currentEditingId = templateId;
+            const modal = document.getElementById('template-modal');
+            const title = document.getElementById('template-modal-title');
+            const form = document.getElementById('template-form');
+            
+            if (templateId) {
+                title.textContent = '编辑Prompt模板';
+                // 填充现有数据
+                fetch(`/api/admin/ai/templates`)
+                    .then(response => response.json())
+                    .then(templates => {
+                        const template = templates.find(t => t.id === templateId);
+                        if (template) {
+                            document.getElementById('template-id').value = template.id;
+                            document.getElementById('template-name').value = template.name;
+                            document.getElementById('template-description').value = template.description || '';
+                            document.getElementById('template-content').value = template.content;
+                            document.getElementById('template-is-active').checked = template.is_active;
+                            
+                            // 填充变量
+                            const variablesContainer = document.getElementById('variables-container');
+                            variablesContainer.innerHTML = '';
+                            template.variables.forEach(variable => {
+                                addVariable(variable);
+                            });
+                        }
+                    });
+            } else {
+                title.textContent = '添加Prompt模板';
+                form.reset();
+                document.getElementById('template-is-active').checked = true;
+                document.getElementById('variables-container').innerHTML = '';
+            }
+            
+            modal.classList.add('active');
+        }
+        
+        // 关闭模板模态框
+        function closeTemplateModal() {
+            document.getElementById('template-modal').classList.remove('active');
+            currentEditingId = null;
+        }
+        
+        // 添加变量输入框
+        function addVariable(value = '') {
+            const container = document.getElementById('variables-container');
+            const div = document.createElement('div');
+            div.className = 'variable-item';
+            div.innerHTML = `
+                <input type="text" class="variable-input" value="${value}" placeholder="变量名">
+                <button type="button" class="remove-variable" onclick="this.parentElement.remove()">&times;</button>
+            `;
+            container.appendChild(div);
+        }
+        
+        // 保存模板
+        async function saveTemplate() {
+            // 收集变量
+            const variableInputs = document.querySelectorAll('#variables-container .variable-input');
+            const variables = Array.from(variableInputs)
+                .map(input => input.value.trim())
+                .filter(value => value !== '');
+            
+            const formData = {
+                name: document.getElementById('template-name').value,
+                description: document.getElementById('template-description').value,
+                content: document.getElementById('template-content').value,
+                variables: variables,
+                is_active: document.getElementById('template-is-active').checked
+            };
+            
+            if (currentEditingId) {
+                formData.id = currentEditingId;
+            }
+            
+            try {
+                const response = await fetch('/api/admin/ai/templates', {
+                    method: currentEditingId ? 'PUT' : 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                if (response.ok) {
+                    closeTemplateModal();
+                    loadTemplates();
+                    alert('保存成功');
+                } else {
+                    alert('保存失败');
+                }
+            } catch (error) {
+                console.error('保存模板失败:', error);
+                alert('保存失败');
+            }
+        }
+        
+        // 编辑模板
+        function editTemplate(id) {
+            openTemplateModal(id);
+        }
+        
+        // 删除模板
+        async function deleteTemplate(id) {
+            if (!confirm('确定要删除这个模板吗？')) return;
+            
+            try {
+                const response = await fetch(`/api/admin/ai/templates?id=${id}`, {
+                    method: 'DELETE'
+                });
+                
+                if (response.ok) {
+                    loadTemplates();
+                    alert('删除成功');
+                } else {
+                    alert('删除失败');
+                }
+            } catch (error) {
+                console.error('删除模板失败:', error);
+                alert('删除失败');
+            }
+        }
+        
+        // 加载API密钥数据
+        async function loadApiKeys() {
+            try {
+                const response = await fetch('/api/admin/ai/api-keys');
+                const keys = await response.json();
+                const tbody = document.getElementById('api-keys-tbody');
+                const emptyState = document.getElementById('api-keys-empty');
+                
+                if (keys.length === 0) {
+                    tbody.innerHTML = '';
+                    emptyState.style.display = 'block';
+                    return;
+                }
+                
+                emptyState.style.display = 'none';
+                tbody.innerHTML = keys.map(key => `
+                    <tr>
+                        <td>${key.provider}</td>
+                        <td>${key.api_key_masked}</td>
+                        <td>
+                            <span class="status-badge ${key.is_active ? 'status-active' : 'status-inactive'}">
+                                ${key.is_active ? '启用' : '禁用'}
+                            </span>
+                        </td>
+                        <td class="actions">
+                            <button class="action-btn btn-outline" onclick="editApiKey(${key.id})">编辑</button>
+                            <button class="action-btn btn-danger" onclick="deleteApiKey(${key.id})">删除</button>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                console.error('加载API密钥失败:', error);
+                alert('加载API密钥配置失败');
+            }
+        }
+        
+        // 打开API密钥模态框
+        function openApiKeyModal(keyId = null) {
+            currentEditingId = keyId;
+            const modal = document.getElementById('api-key-modal');
+            const title = document.getElementById('api-key-modal-title');
+            const form = document.getElementById('api-key-form');
+            
+            if (keyId) {
+                title.textContent = '编辑API密钥';
+                // 填充现有数据
+                fetch(`/api/admin/ai/api-keys`)
+                    .then(response => response.json())
+                    .then(keys => {
+                        const key = keys.find(k => k.id === keyId);
+                        if (key) {
+                            document.getElementById('api-key-id').value = key.id;
+                            document.getElementById('api-key-provider').value = key.provider;
+                            // 注意：我们不显示完整的API密钥，所以密钥字段留空
+                            document.getElementById('api-key-is-active').checked = key.is_active;
+                        }
+                    });
+            } else {
+                title.textContent = '添加API密钥';
+                form.reset();
+                document.getElementById('api-key-is-active').checked = true;
+            }
+            
+            modal.classList.add('active');
+        }
+        
+        // 关闭API密钥模态框
+        function closeApiKeyModal() {
+            document.getElementById('api-key-modal').classList.remove('active');
+            currentEditingId = null;
+        }
+        
+        // 保存API密钥
+        async function saveApiKey() {
+            const formData = {
+                provider: document.getElementById('api-key-provider').value,
+                api_key: document.getElementById('api-key-key').value,
+                is_active: document.getElementById('api-key-is-active').checked
+            };
+            
+            if (currentEditingId) {
+                formData.id = currentEditingId;
+                // 如果没有输入新密钥，则移除api_key字段以保持原密钥不变
+                if (!formData.api_key) {
+                    delete formData.api_key;
+                }
+            }
+            
+            try {
+                const response = await fetch('/api/admin/ai/api-keys', {
+                    method: currentEditingId ? 'PUT' : 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                if (response.ok) {
+                    closeApiKeyModal();
+                    loadApiKeys();
+                    alert('保存成功');
+                } else {
+                    alert('保存失败');
+                }
+            } catch (error) {
+                console.error('保存API密钥失败:', error);
+                alert('保存失败');
+            }
+        }
+        
+        // 编辑API密钥
+        function editApiKey(id) {
+            openApiKeyModal(id);
+        }
+        
+        // 删除API密钥
+        async function deleteApiKey(id) {
+            if (!confirm('确定要删除这个API密钥吗？')) return;
+            
+            try {
+                const response = await fetch(`/api/admin/ai/api-keys?id=${id}`, {
+                    method: 'DELETE'
+                });
+                
+                if (response.ok) {
+                    loadApiKeys();
+                    alert('删除成功');
+                } else {
+                    alert('删除失败');
+                }
+            } catch (error) {
+                console.error('删除API密钥失败:', error);
+                alert('删除失败');
+            }
+        }
+    </script>
+</body>
+</html>

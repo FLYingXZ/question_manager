@@ -1,0 +1,130 @@
+{% extends "header.html" %}
+{% block title %}公告栏{% endblock %}
+
+{% block content %}
+<div class="ui container" style="margin-top: 50px;">
+    <div class="ui grid">
+        <div class="eleven wide column">
+            <h2 class="ui header">
+                <i class="announcement icon"></i>
+                <div class="content">
+                    公告栏
+                </div>
+            </h2>
+            {% if current_user.is_authenticated and current_user.is_admin %}
+                <a href="{{ url_for('add_notice_page') }}" class="ui primary button">
+                    <i class="plus icon"></i> 添加公告
+                </a>
+            {% endif %}
+            <div class="ui segment">
+                <table class="ui celled table">
+                    <thead>
+                        <tr>
+                            <th>标题</th>
+                            <th>时间</th>
+                            {% if current_user.is_authenticated and current_user.is_admin %}
+                                <th>操作</th>
+                            {% endif %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for notice in notices %}
+                        <tr>
+                            <td>
+                                <i class="bullhorn icon"></i>
+                                <a href="{{ url_for('notice_detail_page', id=notice.id) }}">{{ notice.title }}</a>
+                            </td>
+                            <td>{{ notice.date_created.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                            {% if current_user.is_authenticated and current_user.is_admin %}
+                                <td>
+                                    <div class="ui buttons">
+                                        <a href="{{ url_for('edit_notice_page', id=notice.id) }}" class="ui yellow button">
+                                            <i class="edit icon"></i> 编辑
+                                        </a>
+                                        <div class="or"></div>
+                                        <form action="{{ url_for('delete_notice', id=notice.id) }}" method="post" onsubmit="return confirm('确定删除这条公告吗？');">
+                                            <button type="submit" class="ui red button">
+                                                <i class="trash icon"></i> 删除
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            {% endif %}
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="five wide column">
+            <!-- 侧边栏内容（如最近追题、查找、近期比赛等）可以根据需要添加 -->
+            <h4 class="ui header">
+                <i class="rss icon"></i>
+                最近追题
+            </h4>
+            <div class="ui segment">
+                <table class="ui celled table">
+                    <thead>
+                        <tr>
+                            <th>标题</th>
+                            <th>时间</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- 示例数据，需动态填充 -->
+                        <tr>
+                            <td><a href="problem.php?id=1492">ssoi vjudge测试</a></td>
+                            <td>08-16</td>
+                        </tr>
+                        <tr>
+                            <td><a href="problem.php?id=1489">【模板】网络最大流(luogu vjudge测试)</a></td>
+                            <td>08-16</td>
+                        </tr>
+                        <!-- 更多数据 -->
+                    </tbody>
+                </table>
+            </div>
+
+            <h4 class="ui header">
+                <i class="search icon"></i> 查找
+            </h4>
+            <div class="ui segment">
+                <form action="problem.php" method="get" class="ui form">
+                    <div class="ui icon input">
+                        <input type="text" name="id" placeholder="题目编号 …" required>
+                        <i class="search icon"></i>
+                    </div>
+                    <button type="submit" class="ui button primary" style="margin-top: 10px;">搜索</button>
+                    <input type="hidden" name="csrf" value="{{ csrf_token }}">
+                </form>
+            </div>
+
+            <h4 class="ui header">
+                <i class="calendar icon"></i> 近期比赛
+            </h4>
+            <div class="ui segment">
+                <table class="ui celled table">
+                    <thead>
+                        <tr>
+                            <th>作业比赛名称</th>
+                            <th>开始时间</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- 示例数据，需动态填充 -->
+                        <tr>
+                            <td><a href="contest.php?cid=1103">（订正）2023.08.16TEST - S</a></td>
+                            <td>08-16</td>
+                        </tr>
+                        <tr>
+                            <td><a href="contest.php?cid=1102">（订正）2023.08.13TEST - S</a></td>
+                            <td>08-15</td>
+                        </tr>
+                        <!-- 更多数据 -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

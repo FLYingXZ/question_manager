@@ -1,0 +1,80 @@
+{% extends 'header.html' %}
+{% block content %}
+<head>
+    
+    <meta charset="UTF-8">
+    <title>教师编辑课件</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/5.2.3/bootstrap.min.css') }}">
+    <script src="{{ url_for('static', filename='jquery/jquery-3.6.0.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/4.5.2/bootstrap.bundle.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/summernote-bs5.min.js') }}"></script>
+    <link href="{{ url_for('static', filename='css/summernote-bs5.min.css') }}" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <h1 class="my-4">编辑课件</h1>
+        <form method="POST" id="learning-material-form">
+            <!-- Title Field -->
+            <div class="mb-3">
+                <label for="title" class="form-label">课件标题:</label>
+                <input type="text" class="form-control" id="title" name="title" value="{{ material.title }}" required>
+            </div>
+
+            <label for="class_ids">班级:</label>
+            <select name="class_ids" id="class_ids" multiple required>
+                {% for class in classes %}
+                    <option value="{{ class.id }}" {% if class.id in material.class_ids %}selected{% endif %}>{{ class.name }}</option>
+                {% endfor %}
+            </select>
+
+            <!-- Summernote Editor -->
+            <div id="summernote" class="mb-3">在这里编辑学习资料...</div>
+            
+            <!-- Hidden Input to Submit Summernote Content -->
+            <input type="hidden" name="content" id="content">
+
+            <!-- Buttons -->
+            <div class="d-flex justify-content-between">
+                <button id="insert-question-btn" type="button" class="btn btn-outline-primary">插入题目</button>
+                <button type="submit" class="btn btn-success">保存内容</button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            // Initialize Summernote
+            $('#summernote').summernote({
+                height: 300,
+                toolbar: [
+                    ['style', ['style']],
+                    ['font', ['bold', 'italic', 'underline', 'clear']],
+                    ['fontname', ['fontname']],
+                    ['color', ['color']],
+                    ['para', ['ul', 'ol', 'paragraph']],
+                    ['height', ['height']],
+                    ['table', ['table']],
+                    ['insert', ['link', 'picture', 'video']],
+                    ['view', ['fullscreen', 'codeview', 'help']]
+                ]
+            });
+
+            // Set Summernote initial content
+            $('#summernote').summernote('code', `{{ material.content | safe }}`);
+
+            // Insert question button functionality
+            $('#insert-question-btn').on('click', function() {
+                let questionId = prompt("请输入要插入的题目ID：");
+                if (questionId) {
+                    $('#summernote').summernote('pasteHTML', `<div class="embedded-question" data-question-id="${questionId}">题目 ${questionId}</div>`);
+                }
+            });
+
+            // On form submission, store Summernote content in the hidden input
+            $('#learning-material-form').on('submit', function() {
+                $('#content').val($('#summernote').summernote('code'));
+            });
+        });
+    </script>
+</body>
+{% endblock %}

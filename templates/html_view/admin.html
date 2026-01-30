@@ -1,0 +1,32 @@
+{% extends "header.html" %}
+{% block title %}管理面板{% endblock %}
+
+{% block content %}
+<h2>页面管理</h2>
+<a href="{{ url_for('html_add_page') }}" class="button">添加新页面</a>
+
+<table>
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>标题</th>
+            <th>文件名</th>
+            <th>操作</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for page in pages %}
+        <tr>
+            <td>{{ page.id }}</td>
+            <td>{{ page.title }}</td>
+            <td>{{ page.filename }}</td>
+            <td>
+                <a href="{{ url_for('html_edit_page', page_id=page.id) }}">编辑</a>
+                <a href="{{ url_for('html_delete_page', page_id=page.id) }}" 
+                   onclick="return confirm('确定删除?')">删除</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

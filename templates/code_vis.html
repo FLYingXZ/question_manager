@@ -1,0 +1,1254 @@
+{% extends 'header.html' %}
+{% block content %}
+
+<title>编程可视化</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet"/>
+
+<style>
+  :root{
+    --bg: #f6f8fb;
+    --panel: rgba(255,255,255,.86);
+    --text: #0f172a;
+    --muted: #64748b;
+    --border: rgba(15, 23, 42, .10);
+    --shadow: 0 10px 30px rgba(15,23,42,.08);
+    --shadow2: 0 6px 16px rgba(15,23,42,.08);
+    --brand: #2f6cf6;
+    --brand2: #1f4fd6;
+    --hl: rgba(245, 158, 11, .25);
+    --radius: 14px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    background: radial-gradient(1200px 600px at 20% 0%, rgba(47,108,246,.12), transparent 60%),
+                radial-gradient(900px 500px at 90% 30%, rgba(16,185,129,.10), transparent 55%),
+                var(--bg);
+    color: var(--text);
+  }
+
+  .ui.main.container{
+    padding: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    background: transparent !important;
+  }
+
+  #cv-root{
+    position: relative;
+    margin-top: 49px;
+    height: calc(100vh - 49px);
+    display: flex;
+    flex-direction: column;
+  }
+
+  #header{
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    background: linear-gradient(180deg, rgba(255,255,255,.72), rgba(255,255,255,.55));
+    border-bottom: 1px solid var(--border);
+    backdrop-filter: blur(10px);
+  }
+  #header h1{
+    margin: 0;
+    font-size: 18px;
+    letter-spacing: .2px;
+    font-weight: 700;
+  }
+  #header .sub{
+    font-size: 13px;
+    color: var(--muted);
+    font-weight: 500;
+  }
+
+  .top-actions{
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .btn{
+    appearance: none;
+    border: 1px solid var(--border);
+    background: rgba(255,255,255,.7);
+    color: var(--text);
+    border-radius: 10px;
+    padding: 9px 12px;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    transition: transform .08s ease, background .2s ease, border-color .2s ease;
+    box-shadow: 0 1px 0 rgba(15,23,42,.04);
+    user-select: none;
+  }
+  .btn:hover{ background: rgba(255,255,255,.95); border-color: rgba(47,108,246,.25); }
+  .btn:active{ transform: scale(.98); }
+  .btn.primary{
+    border-color: rgba(47,108,246,.35);
+    background: linear-gradient(180deg, rgba(47,108,246,.15), rgba(47,108,246,.08));
+    color: var(--brand2);
+  }
+  .btn.brand{
+    border-color: rgba(47,108,246,.45);
+    background: linear-gradient(180deg, rgba(47,108,246,1), rgba(31,79,214,1));
+    color: white;
+    box-shadow: 0 10px 22px rgba(47,108,246,.22);
+  }
+  .btn.brand:hover{ filter: brightness(1.02); }
+  .btn:disabled{
+    opacity: .55;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+
+  #container{
+    flex: 1;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: 360px 420px 1fr;
+    gap: 14px;
+    padding: 14px;
+  }
+  #container.sidebar-collapsed{
+    grid-template-columns: 0 420px 1fr;
+  }
+
+  .panel{
+    min-height: 0;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow2);
+    backdrop-filter: blur(10px);
+    overflow: hidden;
+    position: relative;
+  }
+  .panel .panel-head{
+    padding: 12px 12px 10px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .panel .panel-title{
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--text);
+    letter-spacing: .2px;
+  }
+  .panel .panel-body{
+    padding: 12px;
+    overflow: auto;
+    min-height: 0;
+  }
+
+  /* 左侧栏 */
+  #left-panel{ display: flex; flex-direction: column; }
+  #container.sidebar-collapsed #left-panel{
+    border: none;
+    width: 0;
+    min-width: 0;
+    overflow: hidden;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .hint{
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: linear-gradient(180deg, rgba(47,108,246,.12), rgba(47,108,246,.06));
+    border: 1px solid rgba(47,108,246,.18);
+    color: var(--brand2);
+    font-size: 12px;
+    line-height: 1.45;
+    margin-bottom: 10px;
+  }
+
+  textarea{
+    width: 100%;
+    min-height: 210px;
+    resize: vertical;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    padding: 10px 10px;
+    font-size: 13px;
+    background: rgba(255,255,255,.9);
+    outline: none;
+  }
+  textarea:focus{
+    border-color: rgba(47,108,246,.35);
+    box-shadow: 0 0 0 4px rgba(47,108,246,.10);
+  }
+
+  .form-row{ margin-top: 10px; }
+  .form-row label{
+    display: block;
+    font-size: 12px;
+    color: var(--muted);
+    margin: 0 0 6px;
+    font-weight: 600;
+  }
+  .form-row input[type="text"]{
+    width: 100%;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    padding: 9px 10px;
+    font-size: 13px;
+    background: rgba(255,255,255,.9);
+    outline: none;
+  }
+  .form-row input[type="text"]:focus{
+    border-color: rgba(47,108,246,.35);
+    box-shadow: 0 0 0 4px rgba(47,108,246,.10);
+  }
+
+  .collapse-row{ display:flex; gap: 10px; align-items:center; flex-wrap: wrap; }
+
+  /* 中间：代码 */
+  #code-panel pre{
+    margin: 0;
+    border-radius: 12px;
+    border: 1px solid rgba(15,23,42,.12);
+    background: linear-gradient(180deg, rgba(11,18,32,.98), rgba(11,18,32,.92));
+    color: #dbeafe;
+    padding: 12px;
+    font-size: 13px;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .highlight{
+    background: var(--hl);
+    border-radius: 6px;
+    padding: 1px 2px;
+  }
+  .kbd{
+    font-size: 11px;
+    color: var(--muted);
+    background: rgba(15,23,42,.06);
+    border: 1px solid rgba(15,23,42,.10);
+    padding: 2px 6px;
+    border-radius: 8px;
+    margin-left: 6px;
+  }
+
+  /* 右侧：画布 */
+  #vis-panel{ display:flex; flex-direction: column; min-height: 0; }
+
+  #code-actions{
+    display:flex;
+    gap: 10px;
+    align-items:center;
+    flex-wrap: wrap;
+  }
+
+  #canvas-wrapper{
+    position: relative;
+    flex: 1;
+    min-height: 0;
+    padding: 12px;
+  }
+  #canvas-surface{
+    position: relative;
+    height: 100%;
+    min-height: 360px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: rgba(255,255,255,.9);
+    box-shadow: var(--shadow);
+    overflow: auto;
+  }
+  #canvas-surface canvas{
+    width: 1500px;
+    height: 1500px;
+    display:block;
+  }
+
+  #zoom-controls{
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    display:flex;
+    gap: 8px;
+    z-index: 5;
+  }
+
+  #var-state{
+    position: fixed;
+    z-index: 20000;
+    min-width: 320px;
+    max-width: 460px;
+    max-height: 70vh;
+    overflow: auto;
+    padding: 10px 10px;
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    background: rgba(200,255,255,.92);
+    backdrop-filter: blur(10px);
+    box-shadow: var(--shadow);
+    cursor: move;
+  }
+  .frame-title{
+    font-weight: 800;
+    font-size: 12px;
+    color: var(--text);
+    margin: 10px 0 8px;
+    padding-top: 10px;
+    border-top: 1px dashed rgba(15,23,42,.18);
+  }
+  table.var-table{
+    width: 100%;
+    border-collapse: collapse;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid rgba(15,23,42,.10);
+    background: rgba(255,255,255,.65);
+  }
+  table.var-table td{
+    border-bottom: 1px solid rgba(15,23,42,.08);
+    padding: 8px 8px;
+    font-size: 12px;
+    vertical-align: top;
+  }
+  table.var-table tr:last-child td{ border-bottom: none; }
+  .var-name{ font-weight: 800; white-space: nowrap; }
+  .var-chip{ display:inline-flex; align-items:center; gap: 8px; }
+  .dot{
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+    display:inline-block;
+    box-shadow: 0 0 0 3px rgba(15,23,42,.04);
+    border: 1px solid rgba(15,23,42,.12);
+    flex: 0 0 auto;
+  }
+  .var-desc{ font-weight: 600; color: var(--muted); margin-left: 6px; }
+
+  #template-menu{
+    position: fixed;
+    left: -300px;
+    top: 70px;
+    width: 300px;
+    height: calc(100% - 70px);
+    background: rgba(255,255,255,.92);
+    border-right: 1px solid var(--border);
+    box-shadow: var(--shadow);
+    transition: left 0.25s ease;
+    z-index: 10000;
+    padding: 14px;
+    overflow-y: auto;
+    backdrop-filter: blur(10px);
+  }
+  #template-menu.show{ left: 0; }
+  #template-menu h3{ margin: 0 0 12px; font-size: 14px; color: var(--text); letter-spacing: .2px; }
+  #template-menu button{
+    width: 100%;
+    margin-bottom: 10px;
+    padding: 10px 10px;
+    text-align: left;
+    border-radius: 12px;
+    border: 1px solid rgba(15,23,42,.10);
+    background: rgba(255,255,255,.85);
+    cursor: pointer;
+    font-weight: 700;
+    color: var(--text);
+    transition: background .2s ease, transform .08s ease, border-color .2s ease;
+  }
+  #template-menu button:hover{ background: rgba(47,108,246,.08); border-color: rgba(47,108,246,.20); }
+  #template-menu button:active{ transform: scale(.99); }
+</style>
+
+<div id="cv-root">
+  <div id="header">
+    <div style="display:flex;flex-direction:column;gap:2px;">
+      <h1>编程可视化</h1>
+      <div class="sub">逐步执行 · 指针动画 · 变量追踪</div>
+    </div>
+
+    <div class="top-actions">
+      <button class="btn primary" id="sidebar-toggle" title="显示/隐藏左侧面板 (Alt+\\)">隐藏左侧</button>
+      <button class="btn primary" id="template-toggle" title="选择代码模板">代码模板</button>
+    </div>
+  </div>
+
+  <div id="template-menu">
+    <h3>模板选择</h3>
+    <button data-template="sum_1to10">循环 - 1到10的和</button>
+    <button data-template="sum2">循环 - 1到10的平方和</button>
+    <button data-template="n_fac">循环 - n的阶乘</button>
+    <button data-template="fibonacci">循环 - 第n项斐波那契数</button>
+    <button data-template="prime">循环 - 素数判断</button>
+    <button data-template="str_find">字符串 - 查找</button>
+    <button data-template="str_split">字符串 - 字符串分割</button>
+    <button data-template="">字符串 - 查找（通配符）</button>
+    <button data-template="compress">字符串 - 数据压缩</button>
+    <button data-template="extract">字符串 - 数据解压</button>
+    <button data-template="swap_enc">字符串 - 换位加密</button>
+    <button data-template="caesar_enc">字符串 - 凯撒加密</button>
+    <button data-template="find_max">列表 - 寻找最大值</button>
+    <button data-template="find_second">列表 - 寻找次大值</button>
+    <button data-template="josephus">列表 - 约瑟夫问题</button>
+    <button data-template="two_points">列表 - 尺取法</button>
+    <button data-template="bubble_sort">排序 - 冒泡排序</button>
+    <button data-template="bubble_sort_plus">排序 - 冒泡排序优化</button>
+    <button data-template="selection_sort">排序 - 选择排序</button>
+    <button data-template="selection_sort_plus">排序 - 双向选择排序</button>
+    <button data-template="insertion_sort">排序 - 简单插入排序</button>
+    <button data-template="shell_sort">排序 - 插入（希尔）排序</button>
+    <button data-template="quick_sort">排序 - 快速排序</button>
+    <button data-template="merge_sort">排序 - 归并排序</button>
+    <button data-template="counting_sort">排序 - 计数（桶）排序</button>
+    <button data-template="counting_sort_with_index">排序 - 计数排序（索引）</button>
+  </div>
+
+  <div id="container">
+    <div class="panel" id="left-panel">
+      <div class="panel-head">
+        <div class="panel-title">输入与配置</div>
+        <div class="collapse-row">
+          <button class="btn" id="toggle-config-btn">显示配置</button>
+          <button class="btn" id="clear-code-btn" title="清空左侧代码输入">清空代码</button>
+          <button class="btn" id="clear-config-btn" title="清空配置项">清空配置</button>
+        </div>
+      </div>
+      <div class="panel-body">
+        <div class="hint" id="template-description"><em>请选择一个模板，或直接输入 Python 代码。</em></div>
+
+        <div>
+          <label for="code-input" style="display:none;">代码输入</label>
+          <textarea id="code-input" title="请在此输入代码" placeholder="请输入 Python 代码" style="height: 300px;"></textarea>
+        </div>
+
+        <div id="config-section" style="display:none; margin-top: 12px;">
+          <div class="form-row">
+            <label for="pointer-vars">展示循环/指针变量（用于加粗与上方指针显示）</label>
+            <input type="text" id="pointer-vars" value="" placeholder="例如：i,j,L,R" />
+          </div>
+          <div class="form-row">
+            <label for="array-vars">展示序列变量（列表/字符串/矩阵/字典）</label>
+            <input type="text" id="array-vars" value="" placeholder="例如：a,s,nums,ans" />
+          </div>
+          <div class="form-row">
+            <label for="pointer-map">循环变量与序列映射</label>
+            <input type="text" id="pointer-map" value="" placeholder="例如：i->a,j->a,L->nums,R->nums" />
+          </div>
+          <div class="form-row">
+            <label for="var-map">变量解释（显示在变量表里）</label>
+            <input type="text" id="var-map" value="" placeholder="例如：sum:总和, ans:答案" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" id="code-panel">
+      <div class="panel-head">
+        <div>
+          <div class="panel-title">代码与定位</div>
+          <div class="sub">高亮当前执行行</div>
+        </div>
+
+        <div id="code-actions">
+          <button class="btn brand" id="run-btn">运行</button>
+          <button class="btn" id="next-btn" disabled>下一步 <span class="kbd">Alt+N</span></button>
+          <button class="btn" id="reset-btn">重置</button>
+        </div>
+      </div>
+      <div class="panel-body">
+        <pre id="code-pre"></pre>
+      </div>
+    </div>
+
+    <div id="var-state"></div>
+
+    <div class="panel" id="vis-panel">
+      <div class="panel-head">
+        <div class="panel-title">可视化</div>
+        <div class="sub">拖动变量框 · 缩放画布</div>
+      </div>
+      <div id="canvas-wrapper" class="panel-body">
+        <div id="zoom-controls">
+          <button class="btn" id="zoom-in">放大</button>
+          <button class="btn" id="zoom-out">缩小</button>
+        </div>
+        <div id="canvas-surface">
+          <canvas id="vis-canvas" width="1500" height="1500"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  var steps = [];
+  var currentStep = 0;
+  var codeLines = [];
+
+  var pointerItems = {}; // { key: {x,y,ptr,arr} }
+  var animating = false;
+  var zoom = 1;
+  var ANIM_DURATION = 260;
+
+  // ---------------- 模板 ----------------
+  var codeTemplates = {
+    str_split: {
+      code: "s = 'In***that***quiet***moment'\nj = 0\nans = []\nkey = '***'\ns += key\nfor i in range(len(s)):\n    if s[i:i+len(key)]==key:\n        ans.append(s[j:i])\n        j = i + len(key)",
+      problem: "字符串分割。根据关键字key将字符串s分割为多个部分并存入列表ans。",
+      pointerVars: "i,j",
+      arrayVars: "s,ans",
+      pointerMap: "i->s,j->s",
+      varMap: "j:左端点,i:右端点,ans:结果"
+    },
+    two_points: {
+      code: "nums = [4, 1, 3, 2, 4, 1, 2, 4, 1]  # 示例数组\nK = 10                  # 目标和阈值\nans = []\nn = len(nums)\nL = 0\nsum = 0\nmin_len = n\nfor R in range(n):\n    sum += nums[R]\n    while sum > K:\n        if R - L + 1 < min_len:\n            min_len = R - L + 1\n            ans = nums[L:R+1]\n        sum -= nums[L]\n        L += 1",
+      problem: "尺取法(又称滑动窗口法)...",
+      pointerVars: "L,R",
+      arrayVars: "nums,ans",
+      pointerMap: "L->nums,R->nums",
+      varMap: "sum:当前区间和,L:左端点,R:右端点,ans:目前已知的最短区间"
+    },
+    quick_sort: {
+      code: "#注：由于本网站暂不支持函数的可视化，故递归调用采用栈模拟。\nn=10\na = [5,4,6,8,3,7,9,2,4,1]  # 示例列表\nstack = [(0, len(a) - 1)]  # 用栈保存待处理的子数组范围\nwhile stack:\n    low, high = stack.pop()\n    if low >= high:\n        continue\n    # 分区过程\n    pivot = a[high]\n    i = low - 1\n    for j in range(low, high):\n        if a[j] <= pivot:\n            i += 1\n            a[i], a[j] = a[j], a[i]\n    a[i + 1], a[high] = a[high], a[i + 1]\n    pi = i + 1  # 分区点\n    # 将子数组范围压入栈（先处理较短的部分以减少栈深度）\n    if pi - low < high - pi:\n        stack.append((low, pi - 1))\n        stack.append((pi + 1, high))\n    else:\n        stack.append((pi + 1, high))\n        stack.append((low, pi - 1))",
+      problem: "快速排序...",
+      pointerVars: "i,j,low,high",
+      arrayVars: "a",
+      pointerMap: "i->a,j->a,low->a,high->a",
+      varMap: "low:递归区间左端点,high:递归区间右端点,i:左区间枚举,j:右区间枚举"
+    },
+    shell_sort: { code: "", problem: "希尔排序...", pointerVars: "j", arrayVars: "a", pointerMap: "j->a", varMap: "gap:分组规模,i:每组起点,j:比较位置" },
+    merge_sort: { code: "#第一趟的k=1的分组过细，建议从k=2的第二躺while观察\nn = 10\na = [5,4,6,8,3,7,9,2,4,1]\nk = 1\nwhile k < n:\n    for i in range(0, n, 2*k):\n        b = []\n        if i + k > n:\n            continue\n        m1 = i + k - 1; m2 = min(i + 2 * k, n) - 1\n        L = i; R = i + k; p = i\n        while p <= m2:\n            if R==m2+1 or a[L] < a[R] and L <= m1:\n                b.append(a[L])\n                L += 1\n            else:\n                b.append(a[R])\n                R += 1\n            p += 1\n        for j in range(i, m2+1):\n            a[j] = b[j-i]\n    k *= 2", problem: "归并排序...", pointerVars: "L,R,m1,m2,j", arrayVars: "a,b", pointerMap: "L->a,R->a,m1->a,m2->a,j->b", varMap: "k:规模,m1:左终点,m2:右终点,L:左起点,R:右起点" },
+    find_second: { code: "a = [4,6,3,7,8,3,5,9,1]\np1 = p2 = 0\nfor i in range(1, len(a)):\n    if a[i] > a[p1]:\n        p2 = p1\n        p1 = i\n    elif a[i] > a[p2]:\n        p2 = i", problem: "寻找第二大", pointerVars: "i,p1,p2", arrayVars: "a", pointerMap: "i->a,p1->a,p2->a", varMap: "i:当前位置,p1:最大位置,p2:次大位置" },
+    find_max: { code: "a = [4,6,3,7,8,3,5,9,1]\np = 0\nfor i in range(1, len(a)):\n    if a[i] > a[p]:\n        p = i", problem: "寻找最大", pointerVars: "i,p", arrayVars: "a", pointerMap: "i->a,p->a", varMap: "i:当前位置,p:最大位置" },
+    swap_enc: { code: "s = 'abcdefgh'\nk = 3\nans = ''\ntmp = ''\nfor i in range(len(s)):\n    tmp = s[i] + tmp\n    if i % k == 2:\n        ans += tmp\n        tmp = ''\nans += tmp\npass", problem: "换位加密", pointerVars: "i", arrayVars: "s,tmp,ans", pointerMap: "i->s", varMap: "tmp:每组字符,ans:答案" },
+    extract: { code: "s = '1a2b11c3g'\nnum = 0\nans = ''\nfor i in range(len(s)):\n    c = s[i]\n    if '0' <= c <= '9':\n        num = num * 10 + int(c)\n    else:\n        ans += c * num\n        num = 0", problem: "解压", pointerVars: "i", arrayVars: "s", pointerMap: "i->s", varMap: "num:当前数字,c:当前字符,ans:结果" },
+    compress: { code: "s = 'abbcccccccccccggg'\ns += '.'\ncnt = 1\nans = ''\nfor i in range(0, len(s)-1):\n    if s[i]==s[i+1]:\n        cnt += 1\n    else:\n        ans += str(cnt)+s[i]\n        cnt = 1", problem: "压缩", pointerVars: "i", arrayVars: "s", pointerMap: "i->s", varMap: "cnt:连续个数,ans:结果" },
+    insertion_sort: { code: "a = [4, 2, 6, 1, 5, 8, 3, 8, 9, 7]\ncnt= 0\nfor i in range(1, len(a)):\n    key = a[i]\n    j = i - 1\n    while j >= 0 and a[j] > key:\n        cnt+= 1  # 每次比较都计数\n        a[j + 1] = a[j]\n        j -= 1\n    a[j + 1] = key", problem: "插入排序", pointerVars: "i,j", arrayVars: "a", pointerMap: "i->a,j->a", varMap: "key:需插入,j:位置,cnt:比较次数" },
+    counting_sort_with_index: { code: "n = 10\na = [4,12,6,12,14,8,3,8,9,7]\nm = max(a)\nf = [0]*(m+1)\nfor i in range(n):\n    f[a[i]] += 1\nfor j in range(1, m+1):\n    f[j] += f[j-1]\nindex = [0] * n\nfor k in range(n):\n    v = f[a[k]]-1\n    index[v] = k\n    f[a[k]] -= 1\nans = []\nfor l in range(n):\n    ans.append(a[index[l]])", problem: "计数排序（索引）", pointerVars: "i,j,k,l,v", arrayVars: "a,f,index,ans", pointerMap: "i->a,j->f,l->f,v->index", varMap: "ans:结果,index:索引,v:位置" },
+    counting_sort: { code: "n = 10\na = [4,12,6,12,14,8,3,8,9,7]\nm = max(a)\nf = [0]*(m+1)\nans = []\nfor i in range(n):\n    j = a[i]\n    f[j] += 1\nfor j in range(m+1):\n    while f[j] > 0:\n        ans.append(j)\n        f[j] -= 1", problem: "计数排序", pointerVars: "i,j", arrayVars: "a,f,ans", pointerMap: "i->a,j->f", varMap: "m:最大值" },
+    selection_sort_plus: { code: "n = 10\ncnt = 0\na = [4,2,6,1,5,8,3,8,9,7]\nfor i in range(n//2-1):\n    minp = i\n    maxp = n-i-1\n    for j in range(i+1, n-i-1):\n        cnt += 1\n        if a[j] < a[minp]:\n            minp = j\n        if a[j] > a[maxp]:\n            maxp = j\n    a[i], a[minp] = a[minp], a[i]\n    if (i==maxp): maxp = i\n    a[n-i-1], a[maxp] = a[maxp], a[n-i-1]", problem: "双向选择排序", pointerVars: "maxp,minp,j", arrayVars: "a", pointerMap: "maxp->a,minp->a,j->a", varMap: "maxp:最大位置,minp:最小位置,j:比较位置,cnt:次数" },
+    selection_sort: { code: "n = 10\ncnt = 0\na = [4,2,6,1,5,8,3,8,9,7]\nfor i in range(n-1):\n    p = i\n    for j in range(i+1, n):\n        cnt += 1\n        if a[j] < a[p]:\n            p = j\n    a[i], a[p] = a[p], a[i]", problem: "选择排序", pointerVars: "i,j", arrayVars: "a", pointerMap: "i->a,j->a,p->a", varMap: "p:基准位置,j:比较位置,cnt:次数" },
+    bubble_sort: { code: "n = 10\ncnt = 0\na = [4,2,6,1,5,8,3,8,9,7]\nfor i in range(n-1, 0, -1):\n    for j in range(1, i+1):\n        cnt += 1\n        if a[j-1]>a[j]:\n            a[j-1], a[j] = a[j], a[j-1]", problem: "冒泡排序", pointerVars: "i,j", arrayVars: "a", pointerMap: "i->a,j->a", varMap: "i:趟数,j:比较位置,cnt:次数" },
+    bubble_sort_plus: { code: "n = 10\ncnt = 0\na = [4,2,6,1,5,8,3,8,9,7]\ni = n-1\nflag = True\nwhile flag:\n    flag = False\n    for j in range(1, i+1):\n        cnt += 1\n        if a[j-1]>a[j]:\n            a[j-1], a[j] = a[j], a[j-1]\n            i = j\n            flag = True", problem: "冒泡排序优化", pointerVars: "i,j", arrayVars: "a", pointerMap: "i->a,j->a", varMap: "i:趟数,j:比较位置,cnt:次数,flag:是否交换" },
+    fibonacci: { code: "n = 10 # 以第10项为例\nx = 1\ny = 1\nfor i in range(3, n+1):\n    y = x + y\n    x = y - x", problem: "斐波那契", pointerVars: "x,y", arrayVars: "a", pointerMap: "i->a", varMap: "i:项数,x:前一项,y:当前项" },
+    n_fac: { code: "a = [i for i in range(11)]  # 此代码用于动画生成，可忽略\nn = 10 # 以10的阶乘为例\nans = 1\nfor i in range(1, n+1):\n    ans *= i", problem: "阶乘" },
+    sum2: { code: "a = [i for i in range(11)]  # 此代码用于动画生成，可忽略\nsum = 0\nfor i in range(1, 11):\n    sum += i*i", problem: "平方和" },
+    sum_1to10: { code: "a = [i for i in range(11)]  # 此代码用于动画生成，可忽略\nsum = 0\nfor i in range(1, 11):\n    sum += i", problem: "求和" },
+    prime: { code: "a = [i for i in range(16)]  # 此代码用于动画生成，可忽略\nn = 15\nflag = True\nfor i in range(2, n):\n    if n % i == 0:\n        flag = False\n        break  # 跳出循环", problem: "素数判断" },
+    josephus: { code: "n = 10\nk = 3; c = 0\na = [1] * 11\ni = 1\np = n  # 剩余人数\nwhile p > 1:\n    if a[i] == 1:\n        c += 1\n        if c == k:\n            a[i] = 0\n            c = 0\n            p -= 1\n    i += 1\n    if i > n:  # 考虑转圈\n        i = 1\nfor i in range(1, n):\n    if a[i]==1:\n        ans = '剩下第 '+str(i)+' 号'\n        break", problem: "约瑟夫问题", pointerVars: "i", arrayVars: "a", pointerMap: "i->a", varMap: "p:剩余人数,c:计数" },
+    str_find: { code: "s = 'My alma mater is YWHS'\nkey = 'ma'\nans = 0\nfor i in range(len(s)):\n    tmp = s[i:i+len(key)]\n    if tmp == key:\n        ans += 1", problem: "查找次数", pointerVars: "i", arrayVars: "s", pointerMap: "i->s" }
+  };
+
+  // ========= 颜色系统 =========
+  var COLOR_PALETTE = [
+    "#2563eb", "#7c3aed", "#db2777", "#f97316", "#16a34a",
+    "#0891b2", "#a16207", "#dc2626", "#0f766e", "#4f46e5"
+  ];
+  function hashString(str){
+    var h = 0;
+    for (var i=0;i<str.length;i++){ h = ((h<<5)-h) + str.charCodeAt(i); h |= 0; }
+    return Math.abs(h);
+  }
+  function colorForVar(name){
+    if(!name) return "#2563eb";
+    return COLOR_PALETTE[hashString(name) % COLOR_PALETTE.length];
+  }
+
+  // 侧边菜单显示隐藏
+  var templateToggle = document.getElementById("template-toggle");
+  var templateMenu = document.getElementById("template-menu");
+  templateToggle.addEventListener("click", function () {
+    templateMenu.classList.toggle("show");
+  });
+
+  // 模板按钮加载
+  var templateButtons = templateMenu.querySelectorAll("button[data-template]");
+  templateButtons.forEach(function (button) {
+    button.addEventListener("click", function () {
+      var tplKey = button.getAttribute("data-template");
+      applyTemplate(tplKey);
+      templateMenu.classList.remove("show");
+    });
+  });
+
+  function applyTemplate(tplKey){
+    if (!codeTemplates[tplKey]) return;
+    var tpl = codeTemplates[tplKey];
+    document.getElementById("code-input").value = tpl.code || "";
+    document.getElementById("template-description").innerHTML = tpl.problem || "";
+    if (tpl.pointerVars != null) document.getElementById("pointer-vars").value = tpl.pointerVars;
+    if (tpl.arrayVars != null) document.getElementById("array-vars").value = tpl.arrayVars;
+    if (tpl.pointerMap != null) document.getElementById("pointer-map").value = tpl.pointerMap;
+    if (tpl.varMap != null) document.getElementById("var-map").value = tpl.varMap;
+  }
+
+  (function initDefault(){ applyTemplate("bubble_sort_plus"); })();
+
+  // 左侧面板折叠/展开
+  var sidebarToggleBtn = document.getElementById("sidebar-toggle");
+  var container = document.getElementById("container");
+  function setSidebarCollapsed(collapsed){
+    if(collapsed){
+      container.classList.add("sidebar-collapsed");
+      sidebarToggleBtn.textContent = "显示左侧";
+    }else{
+      container.classList.remove("sidebar-collapsed");
+      sidebarToggleBtn.textContent = "隐藏左侧";
+    }
+    setTimeout(refreshCanvas, 50);
+  }
+  sidebarToggleBtn.addEventListener("click", function(){
+    setSidebarCollapsed(!container.classList.contains("sidebar-collapsed"));
+  });
+  document.addEventListener("keydown", function(e){
+    if(e.altKey && e.key === "\\"){
+      e.preventDefault();
+      setSidebarCollapsed(!container.classList.contains("sidebar-collapsed"));
+    }
+  });
+
+  // 配置区显示隐藏
+  var toggleConfigBtn = document.getElementById("toggle-config-btn");
+  var configSection = document.getElementById("config-section");
+  toggleConfigBtn.addEventListener("click", function () {
+    if (configSection.style.display === "none" || configSection.style.display === "") {
+      configSection.style.display = "block";
+      toggleConfigBtn.textContent = "隐藏配置";
+    } else {
+      configSection.style.display = "none";
+      toggleConfigBtn.textContent = "显示配置";
+    }
+  });
+
+  // 清空按钮
+  document.getElementById("clear-code-btn").addEventListener("click", function(){
+    document.getElementById("code-input").value = "";
+    document.getElementById("template-description").innerHTML = "<em>代码已清空。</em>";
+  });
+  document.getElementById("clear-config-btn").addEventListener("click", function(){
+    document.getElementById("pointer-vars").value = "";
+    document.getElementById("array-vars").value = "";
+    document.getElementById("pointer-map").value = "";
+    document.getElementById("var-map").value = "";
+  });
+
+  // ---------- 输入/输出弹窗 ----------
+  function collectUserInputs() {
+    var msg =
+      "请输入程序需要的输入（可多行）。\n" +
+      "每一行对应一次 input()。\n" +
+      "留空表示无输入。";
+    var text = window.prompt(msg, "");
+    if (text === null) return null;
+    return text.split("\n");
+  }
+  function showProgramOutput(output) {
+    if (!output) return;
+    window.alert("程序输出：\n\n" + output);
+  }
+
+  // ---------- 运行代码 ----------
+  document.getElementById("run-btn").addEventListener("click", function () {
+    var code = document.getElementById("code-input").value;
+    codeLines = code.split("\n");
+
+    var inputs = [];
+    var hasInputCall = code.includes("input(");
+    if (hasInputCall) {
+      inputs = collectUserInputs();
+      if (inputs === null) return;
+    }
+
+    fetch("/run", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code: code, inputs: inputs })
+    })
+      .then((response) => response.json())
+      .then(function (data) {
+        if (data.status === "success") {
+          steps = data.steps || [];
+          currentStep = 0;
+          document.getElementById("next-btn").disabled = steps.length === 0;
+
+          pointerItems = {};
+          animating = false;
+
+          updateDisplay(true);
+
+          if (typeof data.output === "string") showProgramOutput(data.output);
+        } else {
+          alert(data.message || "运行失败");
+        }
+      })
+      .catch(function (err) {
+        alert("Error: " + err);
+      });
+  });
+
+  // 下一步
+  document.getElementById("next-btn").addEventListener("click", function () {
+    if (animating) return;
+    if (currentStep < steps.length) {
+      updateDisplay(false);
+      currentStep++;
+      if (currentStep >= steps.length) this.disabled = true;
+    }
+  });
+  document.addEventListener("keydown", function(e) {
+    if (e.altKey && (e.key === "n" || e.key === "N")) {
+      e.preventDefault();
+      document.getElementById("next-btn").click();
+    }
+  });
+
+  // 重置
+  document.getElementById("reset-btn").addEventListener("click", function () {
+    steps = [];
+    currentStep = 0;
+    animating = false;
+    document.getElementById("next-btn").disabled = true;
+    document.getElementById("var-state").innerHTML = "";
+    document.getElementById("code-pre").innerHTML = "";
+    var canvas = document.getElementById("vis-canvas");
+    var ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    pointerItems = {};
+  });
+
+  // 缩放
+  document.getElementById("zoom-in").addEventListener("click", function () {
+    zoom *= 1.2;
+    refreshCanvas();
+  });
+  document.getElementById("zoom-out").addEventListener("click", function () {
+    zoom /= 1.2;
+    refreshCanvas();
+  });
+
+  function refreshCanvas(){
+    if(currentStep > 0 && steps[currentStep-1]){
+      drawVisualization(steps[currentStep-1], true);
+    } else if (steps[0]){
+      drawVisualization(steps[0], true);
+    } else {
+      var canvas = document.getElementById("vis-canvas");
+      var ctx = canvas.getContext("2d");
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+  }
+
+  // ---------- 展示更新 ----------
+  function updateDisplay(noAnim) {
+    if (currentStep >= steps.length) return;
+    var step = steps[currentStep];
+
+    // 代码高亮
+    var highlightedCode = "";
+    for (var i = 0; i < codeLines.length; i++) {
+      var line = codeLines[i];
+      if (i + 1 === step.line) highlightedCode += '<span class="highlight">' + escapeHtml(line) + "</span>\n";
+      else highlightedCode += escapeHtml(line) + "\n";
+    }
+    document.getElementById("code-pre").innerHTML = highlightedCode;
+
+    // 变量解释映射
+    var varMapStr = document.getElementById("var-map").value;
+    var varExpMapping = {};
+    varMapStr.split(",").forEach(function (token) {
+      var parts = token.split(":");
+      if (parts.length === 2) varExpMapping[parts[0].trim()] = parts[1].trim();
+    });
+
+    renderVarState(step, varExpMapping);
+    drawVisualization(step, !!noAnim);
+  }
+
+  function renderVarState(step, varExpMapping){
+    var varStateDiv = document.getElementById("var-state");
+    varStateDiv.innerHTML = "";
+
+    function makeTable(obj){
+      var table = document.createElement("table");
+      table.className = "var-table";
+      var keys = Object.keys(obj || {});
+      if (keys.length === 0){
+        var row = document.createElement("tr");
+        var cell = document.createElement("td");
+        cell.textContent = "(无可显示变量)";
+        row.appendChild(cell);
+        table.appendChild(row);
+        return table;
+      }
+
+      keys.forEach(function(v){
+        var row = document.createElement("tr");
+
+        var labelCell = document.createElement("td");
+        var valueCell = document.createElement("td");
+
+        var c = colorForVar(v);
+
+        var labelWrap = document.createElement("div");
+        labelWrap.className = "var-chip";
+
+        var dot = document.createElement("span");
+        dot.className = "dot";
+        dot.style.background = c;
+
+        var name = document.createElement("span");
+        name.className = "var-name";
+        name.style.color = c;
+        name.textContent = v;
+
+        labelWrap.appendChild(dot);
+        labelWrap.appendChild(name);
+
+        if (varExpMapping[v]){
+          var desc = document.createElement("span");
+          desc.className = "var-desc";
+          desc.textContent = "(" + varExpMapping[v] + ")";
+          labelWrap.appendChild(desc);
+        }
+
+        labelCell.appendChild(labelWrap);
+        valueCell.textContent = JSON.stringify(obj[v]);
+
+        row.appendChild(labelCell);
+        row.appendChild(valueCell);
+        table.appendChild(row);
+      });
+
+      return table;
+    }
+
+    if (step.frames && Array.isArray(step.frames) && step.frames.length > 0) {
+      step.frames.forEach(function(fr, idx){
+        var title = document.createElement("div");
+        title.className = "frame-title";
+        title.textContent = "Frame " + idx + "： " + fr.name + "  (line " + fr.line + ")";
+        varStateDiv.appendChild(title);
+        varStateDiv.appendChild(makeTable(fr.locals || {}));
+      });
+      return;
+    }
+    varStateDiv.appendChild(makeTable(step.variables || {}));
+  }
+
+  function escapeHtml(str) {
+    return (str || "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+  }
+
+  function easeInOutQuad(t) {
+    return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+  }
+
+  function computePointerOffset(slotIndex) {
+    var perRow = 4;
+    var col = slotIndex % perRow;
+    var row = Math.floor(slotIndex / perRow);
+    var gapX = 18;
+    var gapY = 18;
+    var centerShift = (perRow - 1) / 2;
+    var dx = (col - centerShift) * gapX;
+    var dy = -row * gapY;
+    return {dx: dx, dy: dy};
+  }
+
+  // ======== 关键修改 1：target点改为“格子中心”附近 ========
+  function computeTargetPositions(step) {
+    var arrayVarsInput = document.getElementById("array-vars").value || "";
+    var arrayVars = arrayVarsInput.split(",").map(v => v.trim()).filter(Boolean);
+
+    var pointerMapStr = document.getElementById("pointer-map").value || "";
+    var pointerMapping = {};
+    pointerMapStr.split(",").forEach(function (token) {
+      var parts = token.split("->");
+      if (parts.length === 2) pointerMapping[parts[0].trim()] = parts[1].trim();
+    });
+
+    var leftMargin = 80;
+    var topMargin = 120;
+    var current_y = topMargin;
+
+    // cell sizes used in draw
+    var cellW = 58, cellH = 38;
+    var pitchX = 60, pitchY = 40;
+
+    var targetPositions = {};
+    var anchorSlots = {};
+
+    arrayVars.forEach(function (arrName) {
+      if (!step.variables || !step.variables.hasOwnProperty(arrName)) return;
+
+      var seq = step.variables[arrName];
+      var isMatrix = Array.isArray(seq) && seq.length > 0 && Array.isArray(seq[0]);
+      var isDict = (seq !== null && typeof seq === "object" && !Array.isArray(seq));
+
+      if (isMatrix) {
+        var numRows = seq.length;
+        var numCols = seq[0].length;
+
+        for (var ptr in pointerMapping) {
+          if (pointerMapping[ptr] !== arrName) continue;
+          var idx = (step.pointers && step.pointers.hasOwnProperty(ptr)) ? step.pointers[ptr]
+                    : (step.variables.hasOwnProperty(ptr) ? step.variables[ptr] : null);
+          if (idx === null || idx === undefined) continue;
+
+          var baseX, baseY, anchorKey;
+
+          // i整行：放左侧，且Y对齐到该行格子“中心”
+          if (ptr === "i" && idx >= 0 && idx < numRows) {
+            baseX = leftMargin - 50;
+            baseY = current_y + idx * pitchY + cellH/2;   // 居中
+            anchorKey = arrName + "@row@" + idx;
+          }
+          // j整列：放上方，且X对齐到该列格子“中心”
+          else if (ptr === "j" && idx >= 0 && idx < numCols) {
+            baseX = leftMargin + idx * pitchX + cellW/2;   // 居中
+            baseY = current_y - 34;                        // 上方更自然的位置
+            anchorKey = arrName + "@col@" + idx;
+          }
+          // 其它指针：默认按一维方式放到“该列上方居中”
+          else {
+            baseX = leftMargin + idx * pitchX + cellW/2;
+            baseY = current_y - 34;
+            anchorKey = arrName + "@idx@" + idx;
+          }
+
+          var slot = anchorSlots[anchorKey] || 0;
+          anchorSlots[anchorKey] = slot + 1;
+          var off = computePointerOffset(slot);
+
+          targetPositions[ptr + "#" + arrName] = { x: baseX + off.dx, y: baseY + off.dy, ptr: ptr, arr: arrName };
+        }
+        current_y += numRows * pitchY + 80;
+
+      } else if (Array.isArray(seq) || typeof seq === "string") {
+        for (var ptr2 in pointerMapping) {
+          if (pointerMapping[ptr2] !== arrName) continue;
+          var idx2 = (step.pointers && step.pointers.hasOwnProperty(ptr2)) ? step.pointers[ptr2]
+                    : (step.variables.hasOwnProperty(ptr2) ? step.variables[ptr2] : null);
+          if (idx2 === null || idx2 === undefined) continue;
+          if (!(idx2 >= 0 && idx2 < seq.length)) continue;
+
+          // 一维：放该格子“上方居中”
+          var baseX2 = leftMargin + idx2 * pitchX + cellW*0.8;
+          var baseY2 = current_y - 34;
+          var anchorKey2 = arrName + "@idx@" + idx2;
+
+          var slot2 = anchorSlots[anchorKey2] || 0;
+          anchorSlots[anchorKey2] = slot2 + 1;
+          var off2 = computePointerOffset(slot2);
+
+          targetPositions[ptr2 + "#" + arrName] = { x: baseX2 + off2.dx, y: baseY2 + off2.dy, ptr: ptr2, arr: arrName };
+        }
+        current_y += 150;
+
+      } else if (isDict) {
+        var keys = Object.keys(seq);
+        current_y += (keys.length + 1) * 40 + 80;
+      }
+    });
+
+    return targetPositions;
+  }
+
+  function drawVisualization(step, noAnim) {
+    var canvas = document.getElementById("vis-canvas");
+    var ctx = canvas.getContext("2d");
+
+    var targetPositions = computeTargetPositions(step);
+
+    Object.keys(targetPositions).forEach(function (key) {
+      var t = targetPositions[key];
+      if (!pointerItems[key]) {
+        pointerItems[key] = { x: t.x, y: t.y, fromX: t.x, fromY: t.y, toX: t.x, toY: t.y, ptr: t.ptr, arr: t.arr };
+      } else {
+        pointerItems[key].fromX = pointerItems[key].x;
+        pointerItems[key].fromY = pointerItems[key].y;
+        pointerItems[key].toX = t.x;
+        pointerItems[key].toY = t.y;
+        pointerItems[key].ptr = t.ptr;
+        pointerItems[key].arr = t.arr;
+      }
+    });
+    Object.keys(pointerItems).forEach(function (key) {
+      if (!targetPositions[key]) delete pointerItems[key];
+    });
+
+    var pointerVarsInput = document.getElementById("pointer-vars").value || "";
+    var highlightPointers = pointerVarsInput.split(",").map(v => v.trim()).filter(Boolean);
+
+    function getPointerIndex(step, ptr){
+      if (step.pointers && step.pointers.hasOwnProperty(ptr)) return step.pointers[ptr];
+      if (step.variables && step.variables.hasOwnProperty(ptr)) return step.variables[ptr];
+      return null;
+    }
+
+    function renderFrame(alpha) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.save();
+      ctx.scale(zoom, zoom);
+
+      // 背景网格
+      ctx.save();
+      ctx.globalAlpha = 0.05;
+      ctx.strokeStyle = "#0f172a";
+      for(let x=0;x<=1500;x+=60){ ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,1500); ctx.stroke(); }
+      for(let y=0;y<=1500;y+=60){ ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(1500,y); ctx.stroke(); }
+      ctx.restore();
+
+      ctx.font = "16px Inter, Arial";
+
+      var arrayVarsInput = document.getElementById("array-vars").value || "";
+      var arrayVars = arrayVarsInput.split(",").map(v => v.trim()).filter(Boolean);
+
+      var leftMargin = 80;
+      var topMargin = 120;
+      var current_y = topMargin;
+
+      arrayVars.forEach(function (arrName) {
+        if (!step.variables || !step.variables.hasOwnProperty(arrName)) return;
+
+        var seq = step.variables[arrName];
+        var isMatrix = Array.isArray(seq) && seq.length > 0 && Array.isArray(seq[0]);
+        var isDict = (seq !== null && typeof seq === "object" && !Array.isArray(seq));
+
+        ctx.fillStyle = "#0f172a";
+        ctx.font = "700 16px Inter, Arial";
+        ctx.fillText(arrName, leftMargin, current_y - 16);
+        ctx.font = "16px Inter, Arial";
+
+        if (isMatrix) {
+          var numRows = seq.length;
+          var numCols = seq[0].length;
+
+          var pointerMapStr = document.getElementById("pointer-map").value || "";
+          var pointerMapping = {};
+          pointerMapStr.split(",").forEach(function (token) {
+            var parts = token.split("->");
+            if (parts.length === 2) pointerMapping[parts[0].trim()] = parts[1].trim();
+          });
+
+          var iIdx = (pointerMapping["i"] === arrName) ? getPointerIndex(step, "i") : null;
+          var jIdx = (pointerMapping["j"] === arrName) ? getPointerIndex(step, "j") : null;
+
+          if (iIdx !== null && iIdx >= 0 && iIdx < numRows){
+            ctx.save();
+            ctx.fillStyle = "rgba(47,108,246,.12)";
+            roundRect(ctx, leftMargin - 4, current_y + iIdx * 40 - 3, numCols * 60 - 2, 40, 12, true, false);
+            ctx.restore();
+          }
+          if (jIdx !== null && jIdx >= 0 && jIdx < numCols){
+            ctx.save();
+            ctx.fillStyle = "rgba(245,158,11,.14)";
+            roundRect(ctx, leftMargin + jIdx * 60 - 3, current_y - 4, 60, numRows * 40 - 2, 12, true, false);
+            ctx.restore();
+          }
+
+          for (var r = 0; r < numRows; r++) {
+            for (var c = 0; c < numCols; c++) {
+              var x = leftMargin + c * 60;
+              var y = current_y + r * 40;
+
+              ctx.fillStyle = "rgba(255,255,255,.9)";
+              ctx.strokeStyle = "rgba(15,23,42,.16)";
+              roundRect(ctx, x, y, 58, 38, 10, true, true);
+
+              ctx.fillStyle = "#0f172a";
+              ctx.font = "600 16px Inter, Arial";
+              drawCenteredText(ctx, String(seq[r][c]), x, y, 58, 38);
+              ctx.font = "16px Inter, Arial";
+            }
+          }
+
+          ctx.fillStyle = "rgba(15,23,42,.55)";
+          ctx.font = "12px Inter, Arial";
+          for (var rr = 0; rr < numRows; rr++) ctx.fillText(rr, leftMargin - 28, current_y + rr * 40 + 24);
+          for (var cc = 0; cc < numCols; cc++) ctx.fillText(cc, leftMargin + cc * 60 + 22, current_y - 2);
+          ctx.font = "16px Inter, Arial";
+
+          current_y += numRows * 40 + 80;
+
+        } else if (Array.isArray(seq) || typeof seq === "string") {
+          for (var i = 0; i < seq.length; i++) {
+            var x1 = leftMargin + i * 60;
+            var y1 = current_y;
+
+            ctx.fillStyle = "rgba(255,255,255,.9)";
+            ctx.strokeStyle = "rgba(15,23,42,.16)";
+            roundRect(ctx, x1, y1, 58, 38, 10, true, true);
+
+            ctx.fillStyle = "#0f172a";
+            ctx.font = "600 16px Inter, Arial";
+            drawCenteredText(ctx, String(seq[i]), x1, y1, 58, 38);
+            ctx.font = "16px Inter, Arial";
+
+            ctx.fillStyle = "rgba(15,23,42,.55)";
+            ctx.font = "12px Inter, Arial";
+            ctx.fillText(i, x1 + 22, y1 + 58);
+            ctx.font = "16px Inter, Arial";
+          }
+          current_y += 150;
+
+        } else if (isDict) {
+          var keys = Object.keys(seq);
+          var cellW = 160, cellH = 40;
+
+          ctx.fillStyle = "rgba(255,255,255,.9)";
+          ctx.strokeStyle = "rgba(15,23,42,.16)";
+          roundRect(ctx, leftMargin, current_y, cellW, cellH, 10, true, true);
+          roundRect(ctx, leftMargin + cellW, current_y, cellW, cellH, 10, true, true);
+          ctx.fillStyle = "#0f172a";
+          ctx.fillText("Key", leftMargin + 14, current_y + 25);
+          ctx.fillText("Value", leftMargin + cellW + 14, current_y + 25);
+
+          var baseY = current_y + cellH;
+          for (var k = 0; k < keys.length; k++) {
+            var kk = keys[k];
+            var vv = seq[kk];
+
+            ctx.fillStyle = "rgba(255,255,255,.9)";
+            ctx.strokeStyle = "rgba(15,23,42,.12)";
+            roundRect(ctx, leftMargin, baseY + k * cellH, cellW, cellH, 10, true, true);
+            roundRect(ctx, leftMargin + cellW, baseY + k * cellH, cellW, cellH, 10, true, true);
+
+            ctx.fillStyle = "#0f172a";
+            ctx.fillText(JSON.stringify(kk), leftMargin + 14, baseY + k * cellH + 25);
+            ctx.fillText(JSON.stringify(vv), leftMargin + cellW + 14, baseY + k * cellH + 25);
+          }
+          current_y += (keys.length + 1) * cellH + 80;
+        }
+      });
+
+      // ======== 关键修改 2：指针文字用 canvas 对齐居中 ========
+      for (var key2 in pointerItems) {
+        var item = pointerItems[key2];
+        var x = item.fromX + (item.toX - item.fromX) * alpha;
+        var y = item.fromY + (item.toY - item.fromY) * alpha;
+        item.x = x; item.y = y;
+
+        var isHi = highlightPointers.indexOf(item.ptr) !== -1;
+        var fontSize = isHi ? 22 : 18;
+
+        ctx.save();
+        ctx.font = (isHi ? "800 " : "700 ") + fontSize + "px Inter, Arial";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+
+        var c = colorForVar(item.ptr);
+        ctx.fillStyle = c;
+
+        ctx.lineWidth = 4;
+        ctx.strokeStyle = "rgba(255,255,255,.85)";
+
+        ctx.strokeText(item.ptr, x, y);
+        ctx.fillText(item.ptr, x, y);
+        ctx.restore();
+      }
+
+      ctx.restore();
+    }
+
+    if (noAnim) {
+      renderFrame(1);
+      animating = false;
+      return;
+    }
+
+    animating = true;
+    var start = performance.now();
+    function tick(now) {
+      var t = (now - start) / ANIM_DURATION;
+      if (t >= 1) t = 1;
+      var alpha = easeInOutQuad(t);
+      renderFrame(alpha);
+      if (t < 1) requestAnimationFrame(tick);
+      else animating = false;
+    }
+    requestAnimationFrame(tick);
+  }
+
+  function drawCenteredText(ctx, text, x, y, w, h){
+    ctx.save();
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(text, x + w/2, y + h/2);
+    ctx.restore();
+  }
+
+  function roundRect(ctx, x, y, w, h, r, fill, stroke){
+    if (w < 2*r) r = w/2;
+    if (h < 2*r) r = h/2;
+    ctx.beginPath();
+    ctx.moveTo(x+r, y);
+    ctx.arcTo(x+w, y, x+w, y+h, r);
+    ctx.arcTo(x+w, y+h, x, y+h, r);
+    ctx.arcTo(x, y+h, x, y, r);
+    ctx.arcTo(x, y, x+w, y, r);
+    ctx.closePath();
+    if(fill) ctx.fill();
+    if(stroke) ctx.stroke();
+  }
+
+  // 拖动变量框（fixed，限制在viewport内）
+  (function () {
+    var dragItem = document.getElementById("var-state");
+    var active = false;
+    var startX, startY, initialLeft, initialTop;
+
+    function clamp(n, min, max){ return Math.max(min, Math.min(max, n)); }
+
+    function clampToViewport(left, top){
+      var pad = 6;
+      var maxLeft = window.innerWidth - dragItem.offsetWidth - pad;
+      var maxTop  = window.innerHeight - dragItem.offsetHeight - pad;
+      return {
+        left: clamp(left, pad, Math.max(pad, maxLeft)),
+        top:  clamp(top,  pad, Math.max(pad, maxTop))
+      };
+    }
+
+    dragItem.addEventListener("mousedown", function (e) {
+      active = true;
+      startX = e.clientX;
+      startY = e.clientY;
+      initialLeft = dragItem.offsetLeft;
+      initialTop = dragItem.offsetTop;
+      e.preventDefault();
+    });
+
+    document.addEventListener("mousemove", function (e) {
+      if (!active) return;
+      var dx = e.clientX - startX;
+      var dy = e.clientY - startY;
+      var pos = clampToViewport(initialLeft + dx, initialTop + dy);
+      dragItem.style.left = pos.left + "px";
+      dragItem.style.top = pos.top + "px";
+    });
+
+    document.addEventListener("mouseup", function () { active = false; });
+
+    window.addEventListener("resize", function(){
+      var pos = clampToViewport(dragItem.offsetLeft, dragItem.offsetTop);
+      dragItem.style.left = pos.left + "px";
+      dragItem.style.top = pos.top + "px";
+    });
+  })();
+</script>
+
+{% endblock %}

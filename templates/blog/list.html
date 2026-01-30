@@ -1,0 +1,291 @@
+{% extends "header.html" %}
+{% block content %}
+
+<style>
+  /* 整体布局微调，和 header 的主容器融合 */
+  .blog-list-wrapper {
+    padding: 24px 28px 32px;
+    background: #f8fafc;
+  }
+
+  .blog-list-title {
+    font-size: 26px;
+    font-weight: 600;
+    color: #2c3e50;
+    letter-spacing: 1px;
+  }
+
+  /* 搜索卡片 */
+  .blog-search-card {
+    background: #ffffff;
+    border-radius: 8px;
+    padding: 16px 20px;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+    border: 1px solid #e5e9f2;
+  }
+
+  .blog-search-label {
+    font-size: 14px;
+    color: #6b7280;
+    margin-bottom: 6px;
+  }
+
+  .form-control:focus {
+    box-shadow: 0 0 0 .15rem rgba(52, 152, 219, .25);
+    border-color: #3498db;
+  }
+
+  .btn-search {
+    background: #3498db;
+    border: none;
+  }
+
+  .btn-search:hover {
+    background: #2980b9;
+  }
+
+  /* 博客卡片 */
+  .blog-card {
+    border-radius: 10px;
+    border: 1px solid #e5e9f2;
+    box-shadow: 0 4px 10px rgba(15, 23, 42, 0.06);
+    transition: all 0.2s ease;
+    overflow: hidden;
+  }
+
+  .blog-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 20px rgba(15, 23, 42, 0.12);
+    border-color: #d0e3f5;
+  }
+
+  .blog-card .card-body {
+    padding: 16px 18px 14px;
+  }
+
+  .blog-title-link {
+    font-size: 18px;
+    font-weight: 600;
+    color: #1f2933;
+    text-decoration: none;
+  }
+
+  .blog-title-link:hover {
+    color: #3498db;
+  }
+
+  .blog-meta {
+    font-size: 13px;
+    color: #9ca3af;
+  }
+
+  .blog-meta strong {
+    color: #6b7280;
+  }
+
+  .blog-tags .badge {
+    font-weight: 500;
+    border-radius: 999px;
+    padding: 4px 10px;
+    font-size: 12px;
+  }
+
+  .badge-tag {
+    background: rgba(52, 152, 219, 0.12);
+    color: #1d4ed8;
+  }
+
+  .blog-excerpt {
+    font-size: 13px;
+    color: #4b5563;
+    margin-top: 6px;
+    max-height: 3.2em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* 分页 */
+  .pagination > li > a,
+  .pagination > li > span {
+    color: #3498db;
+  }
+
+  .pagination .page-item.active .page-link {
+    background-color: #3498db;
+    border-color: #3498db;
+  }
+
+  .pagination .page-link {
+    border-radius: 999px;
+    margin: 0 3px;
+  }
+
+  @media (max-width: 768px) {
+    .blog-list-wrapper {
+      padding: 16px 12px 24px;
+    }
+
+    .blog-card .card-body {
+      padding: 14px 14px 12px;
+    }
+
+    .blog-list-title {
+      font-size: 22px;
+    }
+  }
+</style>
+
+<div class="blog-list-wrapper">
+  <!-- 标题行 -->
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="blog-list-title mb-0">博客列表</h1>
+    <div class="text-muted" style="font-size: 13px;">
+      共 {{ pagination.total or blogs|length }} 篇文章
+    </div>
+  </div>
+
+  <!-- 搜索区域 -->
+  <div class="blog-search-card mb-4">
+    <form method="get">
+      <div class="row g-3 align-items-end">
+        <div class="col-md-5">
+          <label class="blog-search-label">关键字</label>
+          <div class="input-group">
+            <span class="input-group-text bg-white border-end-0">
+              <i class="fa fa-search text-muted"></i>
+            </span>
+            <input type="text"
+                   name="keyword"
+                   class="form-control border-start-0"
+                   placeholder="标题 / 内容 / 作者"
+                   value="{{ request.args.get('keyword', '') }}">
+          </div>
+        </div>
+        <div class="col-md-5">
+          <label class="blog-search-label">分类</label>
+          <div class="input-group">
+            <span class="input-group-text bg-white border-end-0">
+              <i class="fa fa-folder-open text-muted"></i>
+            </span>
+            <input type="text"
+                   name="category"
+                   class="form-control border-start-0"
+                   placeholder="如：算法、随笔、学习笔记"
+                   value="{{ request.args.get('category', '') }}">
+          </div>
+        </div>
+        <div class="col-md-2 d-grid">
+          <button type="submit" class="btn btn-primary btn-search">
+            <i class="fa fa-filter me-1"></i> 搜索
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <!-- 博客列表 -->
+  {% if blogs %}
+  <div class="row">
+    {% for blog in blogs %}
+    <div class="col-md-4 mb-4">
+      <div class="card blog-card h-100">
+        <div class="card-body d-flex flex-column">
+          <h5 class="card-title mb-2">
+            <a href="{{ url_for('blog_detail', blog_id=blog.id) }}"
+               class="blog-title-link stretched-link">
+              {{ blog.title }}
+            </a>
+          </h5>
+
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <span class="blog-meta">
+              <i class="fa-regular fa-clock me-1"></i>
+              {{ blog.create_time }}
+            </span>
+          </div>
+
+          <p class="blog-meta mb-1">
+            <strong>作者：</strong>{{ blog.author.username }}
+            &nbsp;&nbsp;|&nbsp;&nbsp;
+            <strong>分类：</strong>{{ blog.category or '未分类' }}
+          </p>
+
+          {% if blog.summary or blog.content %}
+          <p class="blog-excerpt">
+            {% if blog.summary %}
+              {{ blog.summary }}
+            {% else %}
+              {{ blog.content|striptags|truncate(70, True, '...') }}
+            {% endif %}
+          </p>
+          {% endif %}
+
+          <div class="mt-auto pt-2 blog-tags">
+            <strong class="blog-meta">标签：</strong>
+            {% if blog.tags %}
+              {% for tag in blog.tags.split(",") %}
+              <span class="badge badge-tag me-1 mb-1">{{ tag.strip() }}</span>
+              {% endfor %}
+            {% else %}
+              <span class="blog-meta">无</span>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="text-center text-muted py-5">
+    暂无匹配的博客内容。
+  </div>
+  {% endif %}
+
+  <!-- 分页 -->
+  {% if pagination.pages > 1 %}
+  <nav aria-label="Page navigation">
+    <ul class="pagination justify-content-center mt-3">
+      {# 上一页 #}
+      <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+        <a class="page-link"
+           href="{% if pagination.has_prev %}{{ url_for('blog_list', page=pagination.prev_num,
+                   keyword=request.args.get('keyword', ''),
+                   category=request.args.get('category', '')) }}{% else %}#{% endif %}">
+          上一页
+        </a>
+      </li>
+
+      {# 具体页码，使用 iter_pages 支持省略号 #}
+      {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1,
+                                               left_current=2, right_current=2) %}
+        {% if page_num %}
+          <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
+            <a class="page-link"
+               href="{{ url_for('blog_list', page=page_num,
+                                keyword=request.args.get('keyword', ''),
+                                category=request.args.get('category', '')) }}">
+              {{ page_num }}
+            </a>
+          </li>
+        {% else %}
+          <li class="page-item disabled">
+            <span class="page-link">…</span>
+          </li>
+        {% endif %}
+      {% endfor %}
+
+      {# 下一页 #}
+      <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+        <a class="page-link"
+           href="{% if pagination.has_next %}{{ url_for('blog_list', page=pagination.next_num,
+                   keyword=request.args.get('keyword', ''),
+                   category=request.args.get('category', '')) }}{% else %}#{% endif %}">
+          下一页
+        </a>
+      </li>
+    </ul>
+  </nav>
+  {% endif %}
+</div>
+
+{% endblock %}

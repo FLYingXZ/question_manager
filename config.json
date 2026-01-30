@@ -1,0 +1,14 @@
+{
+    "ALLOWED_IPS": [
+        "122.242.189.*"
+    ],
+    "BAIDU_GPT_ID": "VQdkTEbG11pDaGd75tXIWTSa",
+    "BAIDU_GPT_SECRET_KEY": "nykUFOgf0irvhcsZMW0IxhISbYMybphz",
+    "CHATGPT_KEY": "sk-tq6vQWH4fXYqEmLSIu39wL2SPEVgQ6SHOrUxL7Q06f1oHsok",
+    "CHATGPT_BASE_URL": "https://api.chatanywhere.tech/v1",
+    "SPARKAI_URL": "wss://spark-api.xf-yun.com/v3.5/chat",
+    "SPARKAI_APP_ID": "52def295",
+    "SPARKAI_API_SECRET": "M2U4M2I4ZjcyMjNiNGQwODExNjljMWNk",
+    "SPARKAI_API_KEY": "35bc546044044ed7684c85270515a441",
+    "DEEKSEEK_API_KEY": "sk-75e3bd294770479cbf83bd3b3aa2d2ae"
+}

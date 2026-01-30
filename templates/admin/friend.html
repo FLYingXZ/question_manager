@@ -1,0 +1,132 @@
+<head>
+    <style>
+        /* 控制简介只显示一行，超出的用省略号显示 */
+        .description-truncate {
+            display: -webkit-box;
+            -webkit-line-clamp: 1; /* 限制为一行 */
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        /* 调整卡片显示布局，每行显示4个 */
+        .row {
+            display: flex;
+            flex-wrap: wrap;
+        }
+
+        .col-md-3 {
+            flex: 1 1 23%; /* 每行显示4个 */
+            max-width: 23%; /* 控制每列的最大宽度 */
+        }
+        /* 给分类标题添加样式 */
+        .category-title {
+            font-size: 1.25rem;
+            font-weight: bold;
+            color: #4a90e2; /* 修改为你喜欢的颜色 */
+            margin-bottom: 15px;
+        }
+        
+        /* 给分类图标添加一些空间 */
+        .category-icon {
+            margin-right: 8px;
+        }
+        
+        /* 分类容器的边框和背景 */
+        .category-container {
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        /* 鼠标经过标签时显示不同颜色 */
+        .card:hover {
+            background-color: #e8f5e9; /* 轻绿色背景 */
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2); /* 增加阴影效果 */
+            transition: all 0.3s ease-in-out; /* 平滑过渡效果 */
+        }
+    </style>
+</head>
+
+{% extends 'header.html' %}
+{% block content %}
+
+<div class="container mt-5">
+    <!-- 动态渲染，将链接根据类型展开显示 -->
+    {% for grp, links in grouped_links.items() %}
+    <div class="my-4 category-container">
+        <div class="d-flex align-items-center">
+            <i class="eva eva-thermometer-plus-outline me-2 category-icon"></i>
+            <h4 class="category-title">{{ grp }}</h4>
+        </div>
+        <div class="row">
+            {% for link in links %}
+            <div class="col-md-3 mb-3">
+                <a href="{{ link.url }}" class="card text-decoration-none shadow-sm" target="_blank">
+                    <div class="card-body">
+                        <h5 class="card-title" style="color: black;">{{ link.title }}</h5>
+                        <!-- 修改描述部分 -->
+                        <p class="card-text text-muted description-truncate" title="{{ link.description }}">
+                            {{ link.description }}
+                        </p>
+                    </div>
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+<div class="row justify-content-center">
+        <!-- 表单用于添加新链接 -->
+        <div class="col-md-8">
+            <form action="/api/add_link" method="post" class="add-link-form p-4 border rounded shadow-sm bg-light">
+                <h3 class="text-center mb-4">添加新链接</h3>
+                <div class="mb-3">
+                    <input type="text" name="url" class="form-control" placeholder="URL" required>
+                </div>
+                <div class="mb-3">
+                    <input type="text" name="title" class="form-control" placeholder="Title" required>
+                </div>
+                <div class="mb-3">
+                    <input type="text" name="description" class="form-control" placeholder="Description" required>
+                </div>
+                <div class="mb-3">
+                    <input type="text" name="group" class="form-control" placeholder="Group" required>
+                </div>
+                <button type="submit" class="btn btn-primary w-100">添加</button>
+            </form>
+        </div>
+    </div>
+<script src="{{ url_for('static', filename='js/5.2.3/bootstrap.bundle.min.js') }}"></script>
+
+<script>
+    // 更新链接信息
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.save-btn').forEach(function(button) {
+            button.onclick = function() {
+                let linkId = this.dataset.id;
+                let updatedData = {};
+                document.querySelectorAll('.editable[data-id="' + linkId + '"]').forEach(function(editable) {
+                    let field = editable.dataset.field;
+                    let value = editable.innerText;
+                    updatedData[field] = value;
+                });
+                // 发送 AJAX 请求以更新数据
+                fetch('/api/update_link/' + linkId, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(updatedData)
+                }).then(response => {
+                    if (response.ok) {
+                        console.log('Link updated successfully!');
+                    } else {
+                        console.error('Error updating link');
+                    }
+                });
+            };
+        });
+    });
+</script>
+
+{% endblock %}

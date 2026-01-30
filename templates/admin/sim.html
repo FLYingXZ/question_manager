@@ -1,0 +1,81 @@
+{% extends 'header.html' %}
+{% block content %}
+<div class="mb-3">
+    <button class="btn btn-danger" id="checkDuplicatesBtn">查重</button>
+</div>
+
+<div id="duplicateResults" style="display:none;">
+    <h5>重复题目</h5>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>题目ID 1</th>
+                <th>题目ID 2</th>
+                <th>相似度</th>
+            </tr>
+        </thead>
+        <tbody id="duplicateTableBody">
+            <!-- 动态填充重复题目 -->
+        </tbody>
+    </table>
+    <button class="btn btn-info" id="copyIdsBtn">复制题目ID 2</button>
+</div>
+
+<script>
+    document.getElementById('checkDuplicatesBtn').addEventListener('click', function () {
+        fetch('/check_duplicates')
+            .then(response => {
+                if (!response.ok) {
+                    const contentType = response.headers.get('content-type');
+                    if (contentType && contentType.includes('application/json')) {
+                        return response.json().then(errorData => {
+                            throw new Error(errorData.error || `HTTP ${response.status}`);
+                        });
+                    } else {
+                        throw new Error(`HTTP ${response.status}: 非 JSON 响应`);
+                    }
+                }
+                return response.json();
+            })
+            .then(data => {
+                const duplicateTableBody = document.getElementById('duplicateTableBody');
+                duplicateTableBody.innerHTML = '';
+                if (data.duplicates.length === 0) {
+                    alert('未发现重复题目。');
+                } else {
+                    data.duplicates.forEach(duplicate => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${duplicate.id1}</td>
+                            <td class="id2">${duplicate.id2}</td>
+                            <td>${(duplicate.similarity * 100).toFixed(2)}%</td>
+                        `;
+                        duplicateTableBody.appendChild(row);
+                    });
+                    document.getElementById('duplicateResults').style.display = 'block';
+                }
+            })
+            .catch(error => {
+                console.error('Fetch error:', error);
+                if (error.message.includes('504')) {
+                    alert('服务器超时，请稍后重试或减少查重范围。');
+                } else {
+                    alert(`错误：${error.message}`);
+                }
+            });
+    });
+
+    document.getElementById('copyIdsBtn').addEventListener('click', function () {
+        const ids = Array.from(document.querySelectorAll('.id2')).map(cell => cell.textContent);
+        const idsString = ids.join(',');
+        navigator.clipboard.writeText(idsString)
+            .then(() => {
+                alert('题目ID 2 已成功复制到剪贴板！');
+            })
+            .catch(err => {
+                console.error('复制失败:', err);
+                alert('复制失败，请重试。');
+            });
+    });
+</script>
+{% endblock %}

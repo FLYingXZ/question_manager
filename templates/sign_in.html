@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>学生签到</title>
+    <script src="{{ url_for('static', filename='jquery/jquery-3.6.0.min.js') }}"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/5.2.3/bootstrap.min.css') }}">
+</head>
+
+<body>
+    <div class="container">
+        <h1 class="text-center">签到页面</h1>
+        <div class="text-center">
+            <button id="signInBtn" class="btn btn-primary">签到</button>
+            <p id="signInMessage" class="text-success" style="margin-top: 20px;"></p>
+        </div>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            // 页面加载时检查用户当天签到状态
+            $.ajax({
+                url: '/check_sign_in_status',
+                type: 'GET',
+                success: function(response) {
+                    if (response.status === '已签到') {
+                        $('#signInMessage').text('已签到，签到时间：' + response.sign_in_time);
+                        $('#signInBtn').prop('disabled', true).text('已签到');
+
+                        // 2秒后跳转到 /history_today 页面
+                        setTimeout(function() {
+                            window.location.href = "/notice";
+                        }, 2000);
+                    }
+                },
+                error: function(xhr) {
+                    console.log('获取签到状态失败:', xhr.responseJSON.error);
+                }
+            });
+
+            // 点击签到按钮时进行签到
+            $('#signInBtn').click(function() {
+                $.ajax({
+                    url: '/sign_in',
+                    type: 'POST',
+                    success: function(response) {
+                        $('#signInMessage').text(response.message + '，签到时间：' + response.sign_in_time);
+                        $('#signInBtn').prop('disabled', true).text('已签到');
+
+                        // 2秒后跳转到 /navigation 页面
+                        setTimeout(function() {
+                            window.location.href = "/notice";
+                        }, 2000);
+                    },
+                    error: function(xhr) {
+                        $('#signInMessage').text(xhr.responseJSON.message);
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+
+</html>

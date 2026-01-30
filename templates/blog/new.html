@@ -1,0 +1,250 @@
+{% extends "header.html" %}
+{% block content %}
+
+<!-- 由于 header.html 已经引入 bootstrap5，这里只保留必要的资源 -->
+<head>
+    <meta charset="UTF-8">
+    <title>新的博客</title>
+
+    <!-- EasyMDE -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/easymde.min.css') }}">
+    <script src="{{ url_for('static', filename='js/easymde.min.js') }}"></script>
+
+    <!-- MathJax 配置 -->
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']]
+            },
+            svg: {
+                fontCache: 'global'
+            }
+        };
+    </script>
+    <script src="{{ url_for('static', filename='js/tex-mml-chtml.js') }}"></script>
+
+    <style>
+        /* 整体容器 */
+        .blog-editor-wrapper {
+            padding: 30px 40px 40px;
+            background: #f5f7fa;
+        }
+
+        .blog-editor-card {
+            background: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
+            padding: 25px 28px 28px;
+        }
+
+        .blog-editor-title {
+            font-size: 24px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+        }
+
+        .blog-editor-title::before {
+            content: "";
+            width: 4px;
+            height: 22px;
+            background: #3498db;
+            border-radius: 2px;
+            margin-right: 10px;
+        }
+
+        /* 表单元素 */
+        .blog-editor-card .form-label {
+            font-weight: 500;
+            color: #34495e;
+        }
+
+        .blog-editor-card .form-control {
+            border-radius: 6px;
+            border-color: #dce1e6;
+            box-shadow: none;
+        }
+
+        .blog-editor-card .form-control:focus {
+            border-color: #3498db;
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.15);
+        }
+
+        .blog-editor-card .form-text {
+            color: #95a5a6;
+            font-size: 0.85rem;
+        }
+
+        /* Switch 风格的公开选项 */
+        .form-check.form-switch .form-check-input {
+            width: 2.5em;
+            height: 1.3em;
+        }
+
+        .form-check-label {
+            color: #34495e;
+            margin-left: 4px;
+        }
+
+        /* 底部按钮区 */
+        .editor-actions {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .editor-actions .btn-primary {
+            background-color: #3498db;
+            border-color: #3498db;
+            border-radius: 6px;
+            font-weight: 500;
+            padding: 6px 16px;
+        }
+
+        .editor-actions .btn-primary:hover {
+            background-color: #2980b9;
+            border-color: #2980b9;
+        }
+
+        .editor-actions .btn-outline-secondary {
+            border-radius: 6px;
+            padding: 6px 16px;
+        }
+
+        /* EasyMDE 调整 */
+        .EasyMDEContainer {
+            border-radius: 6px;
+            border: 1px solid #dce1e6;
+            overflow: hidden;
+        }
+
+        .editor-toolbar {
+            background: #f8f9fb;
+            border-bottom: 1px solid #dce1e6 !important;
+        }
+
+        .editor-toolbar button {
+            color: #34495e !important;
+        }
+
+        .editor-toolbar button:hover {
+            background: #ecf0f1 !important;
+        }
+
+        .CodeMirror, .editor-preview {
+            min-height: 320px;
+            font-size: 0.95rem;
+        }
+
+        .CodeMirror {
+            background: #fbfcfe;
+        }
+
+        .editor-preview {
+            padding: 16px !important;
+        }
+
+        /* 响应式调整 */
+        @media (max-width: 768px) {
+            .blog-editor-wrapper {
+                padding: 20px 15px 25px;
+            }
+            .blog-editor-card {
+                padding: 18px 15px 22px;
+            }
+        }
+    </style>
+</head>
+
+<div class="blog-editor-wrapper">
+    <div class="blog-editor-card">
+        <div class="blog-editor-title">新增博客</div>
+
+        <form method="post">
+            <div class="row g-3">
+                <div class="col-12">
+                    <label for="title" class="form-label">标题</label>
+                    <input type="text" class="form-control" id="title" name="title" required
+                           placeholder="请输入博客标题，例如：动态规划入门笔记">
+                </div>
+
+                <div class="col-md-6">
+                    <label for="category" class="form-label">分类</label>
+                    <input type="text" class="form-control" id="category" name="category"
+                           placeholder="例如：算法 / 学习笔记 / 随笔">
+                </div>
+
+                <div class="col-md-6">
+                    <label for="tags" class="form-label">标签</label>
+                    <input type="text" class="form-control" id="tags" name="tags"
+                           placeholder="以逗号分隔，例如：DP, 图论, C++">
+                    <div class="form-text">示例：学习笔记, 动态规划, NOIP</div>
+                </div>
+
+                <div class="col-12">
+                    <label for="mdcontent" class="form-label">内容</label>
+                    <textarea id="mdcontent" name="content"></textarea>
+                    <div class="form-text mt-1">
+                        支持 Markdown 与 LaTeX 公式（例如：<code>$a^2+b^2=c^2$</code>）。
+                    </div>
+                </div>
+
+                <div class="col-md-6 mt-2">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="is_public" name="is_public">
+                        <label class="form-check-label" for="is_public">公开此博客</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="editor-actions">
+                <button type="submit" class="btn btn-primary">
+                    发布
+                </button>
+                <button type="button" class="btn btn-outline-secondary"
+                        onclick="window.open('https://www.runoob.com/markdown/md-title.html', '_blank')">
+                    Markdown 语法帮助
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    // 初始化 EasyMDE
+    var easyMDE = new EasyMDE({
+        element: document.getElementById('mdcontent'),
+        autofocus: true,
+        autoDownloadFontAwesome: false,
+        showIcons: ["code", "bold", "italic", "link", "quote"],
+        spellChecker: false,
+        placeholder:
+`在这里输入 Markdown 内容...
+
+例如：
+# 这是一级标题
+## 这是二级标题
+
+这是正文，可以包含 **加粗**、*斜体*、[链接](https://example.com) 等。
+
+数学公式示例：
+行内：$a^2 + b^2 = c^2$
+独立公式：
+$$
+\\sum_{i=1}^{n} i = \\frac{n(n+1)}{2}
+$$
+`,
+        previewRender: function(plainText) {
+            var preview = this.parent.markdown(plainText); // 渲染 Markdown
+            setTimeout(function() {
+                MathJax.typesetPromise(); // 触发 MathJax 渲染
+            }, 0);
+            return preview;
+        }
+    });
+</script>
+
+{% endblock %}

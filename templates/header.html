@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>个人题库管理系统</title>
+    <script src="{{ url_for('static', filename='js/fontawesome/edd4aca087.js') }}" crossorigin="anonymous"></script>
+    <script src="{{ url_for('static', filename='jquery/jquery-3.6.0.min.js') }}"></script>
+    <!-- 引入Bootstrap JS -->
+    <script src="{{ url_for('static', filename='js/5.2.3/bootstrap.bundle.min.js') }}"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='syzoj/css/semantic.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='syzoj/css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/5.2.3/bootstrap.min.css') }}">
+    
+    <style>
+        /* 统一冷色调简约风格 */
+        html, body {
+            height: 100%;
+        }
+        
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+        
+            /* 全站背景：滚动到底也会一直有 */
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            background-repeat: no-repeat;
+            background-size: cover;
+        
+            /* 可选：如果你想滚动时背景固定不动，打开这一行 */
+             background-attachment: fixed; 
+        }
+        
+        /* 导航栏样式 */
+        .ui.fixed.borderless.menu {
+            background: #34495e;
+            border-bottom: 1px solid #2c3e50;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .ui.menu .item {
+            color: #ecf0f1;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            border-radius: 0;
+        }
+        
+        .ui.menu .item:hover {
+            background: #2c3e50;
+            color: #3498db;
+        }
+        
+        .ui.menu .item.active {
+            background: #2c3e50;
+            color: #3498db;
+            border-bottom: 2px solid #3498db;
+        }
+        
+        .ui.menu .item i {
+            color: #3498db;
+            margin-right: 8px;
+        }
+        
+        .ui.menu .item:hover i {
+            color: #3498db;
+        }
+        
+        /* 下拉菜单样式 */
+        .ui.simple.dropdown.item {
+            color: #ecf0f1;
+        }
+        
+        .ui.dropdown .menu {
+            background: white;
+            border: 1px solid #dce1e6;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 4px;
+            margin-top: 8px;
+        }
+        
+        .ui.dropdown .menu .item {
+            color: #2c3e50;
+            border-bottom: 1px solid #f1f3f4;
+        }
+        
+        .ui.dropdown .menu .item:hover {
+            background: #f8f9fa;
+            color: #3498db;
+        }
+        
+        .ui.dropdown .menu .item:last-child {
+            border-bottom: none;
+        }
+        
+        /* 系统工具下拉菜单特定样式 */
+        .system-tools-dropdown .menu {
+            min-width: 200px;
+        }
+        
+        /* 用户菜单样式 */
+        .ui.dropdown .menu .item i {
+            color: #7f8c8d;
+            margin-right: 8px;
+        }
+        
+        .ui.dropdown .menu .item:hover i {
+            color: #3498db;
+        }
+        
+        /* 主容器样式 */
+        .ui.main.container {
+            background: white;
+            width: 70%;
+            border-radius: 8px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+            margin: 60px 30px 30px;
+            padding: 0;
+            overflow: hidden;
+        }
+        
+        .padding {
+            padding: 0;
+        }
+        
+        /* 按钮样式统一 */
+        .btn-custom-new {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .btn-custom-new:hover {
+            background: #2980b9;
+            color: white;
+            transform: translateY(-1px);
+        }
+        
+        /* 响应式调整 */
+        @media (max-width: 768px) {
+            .ui.main.container {
+                margin: 70px 15px 20px;
+                border-radius: 6px;
+            }
+            
+            .padding {
+                padding: 0;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="ui fixed borderless menu" style="position: fixed; height: 49px; z-index:99999">
+        <div class="ui stackable mobile ui container computer" style="margin-left:auto;margin-right:auto;">
+            <a href="/notice" class="item "><i class="fa-solid fa-volume-high"></i> 公告栏</a>
+            <a href="/learning_markdown" class="item "><i class="fa-sharp fa-solid fa-home"></i> 学习中心</a>
+            <a href="/code_vis" class="item"><i class="fa-solid fa-video"></i>编程可视</a>
+            <a href="/hydrooj-login" class="item "><i class="fab fa-python"></i> 编程平台（校内）</a>
+            <!-- <a href="/learning_materials_student" class="item "><i class="fa-sharp fa-solid fa-list"></i> 学习中心2</a> -->
+            <a href="/exam_list" class="item "><i class="fas fa-scroll"></i> 试卷列表</a>
+            <a href="/problem_list" class="item "><i class="fa-regular fa-rectangle-list"></i> 题目列表</a>
+            <a href="/blogs" class="item "><i class="fas fa-solid fa-folder-open"></i> 博客浏览</a>
+            <a href="/forum" class="item "><i class="fas fa-comments"></i> 论坛</a>
+            
+            <!-- 系统工具下拉菜单 -->
+            <div class="ui simple dropdown item system-tools-dropdown">
+                <i class="fas fa-tools"></i> 系统工具 <i class="dropdown icon"></i>
+                <div class="menu">
+                    <a href="/help" class="item"><i class="fa-solid fa-book"></i> 项目文档</a>
+                    <a href="/gpt" class="item"><i class="fab fa-python"></i> 编程助手</a>
+                    {% if user_role in ['admin', 'teacher'] %}
+                    <a href="/upload" class="item"><i class="fas fa-cloud-download-alt"></i>在线云盘</a>
+                    <a href="/friend" class="item"><i class="fas fa-tools"></i> 工具箱</a>
+                    <a href="/editor" class="item"><i class="fas fa-edit"></i> 编辑器</a>
+                    {% endif %}
+                    <a href="/navigation" class="item"><i class="fa-solid fa-person-military-pointing"></i> 网址导航</a>
+                </div>
+            </div>
+
+            <!-- 用户菜单 -->
+            <div class="right menu">
+                {% if current_user.is_authenticated %}
+                <div class="ui simple dropdown item">{{ current_user.username }} <i class="dropdown icon"></i>
+                    <div class="menu">
+                        <a class="item" href="/profile">用户中心</a>
+                        <a class="item" href="{{ url_for('student_analysis', student_id=current_user.id) }}">我的成绩</a>
+                        <a class="item" href="/blog/manage">我的博客</a>
+
+                        <!-- 管理员功能 -->
+                        {% if user_role in ['admin', 'teacher'] %}
+                        <a class="item" href="/manage_classes">班级管理</a>
+                        <a class="item" href="/learning_materials">课件管理（测试ing）</a>
+                        <a class="item" href="/users_manage">用户管理</a>
+                        <a class="item" href="/sign_manage">签到管理</a>
+                        <a class="item" href="/admin/blogs">博客管理</a>
+                        <a class="item" href="/login_records">登录记录</a>
+                        {% endif %}
+                        {% if current_user.username=='admin' %}
+                        <a class="item" href="/logs">操作记录</a>
+                        <a class="item" href="/config">配置文件</a>
+                        <a class="item" href="/user_chat_history">GPT记录</a>
+                        {% endif %}
+                        <a class="item" href="/logout">登出</a>
+                    </div>
+                </div>
+                {% else %}
+                <button class="item"><i class="fas fa-user"></i>游客</button>
+                <div class="dropdown-content">
+                    <a class="item" href="/login">登录</a>
+                    <!-- <a class="item" href="/register">注册</a> -->
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="ui main container">
+        {% block content %}
+        <!-- 这个区域将被子模板填充 -->
+        {% endblock %}
+        <!-- 点击后出现烟花效果 <script src="static/js/cursor-effects.js"></script>-->
+    </div>
+    
+</body>
+
+<script>
+    // 使用此函数处理所有需要权限的链接
+    function handleProtectedLink(event, url) {
+        event.preventDefault(); // 防止默认跳转
+
+        $.ajax({
+            url: url,
+            type: 'GET', // 根据实际情况选择请求类型
+            success: function(data) {
+                window.location.href = url; // 如果成功，则导航到目标页面
+            },
+            error: function(xhr) {
+                if (xhr.status === 403) {
+                    const message = xhr.responseJSON ? xhr.responseJSON.message : "权限不足";
+                    alert(message); // 显示权限不足信息
+                } else {
+                    console.error("Request failed:", xhr.status, xhr.statusText);
+                }
+            }
+        });
+    }
+
+    $(document).ready(function() {
+        // 选择具体需要权限的链接进行监听
+        $('a[href="/users_manage"], a[href="/sign_manage"], a[href="/admin/blogs"], a[href="/problem_list"], a[href="/add_question"], a[href="/manage_classes"], a[href="/upload"], a[href="/help"], a[href="/blogs"], a[href="/login_records"], a[href="/problem_list"], a[href="/config"]').click(function(event) {
+            handleProtectedLink(event, $(this).attr('href'));
+        });
+    });
+
+    /*
+    //背景图片
+    document.addEventListener('DOMContentLoaded', function() {
+        var images = [
+            'static/images/background1.jpg',
+            'static/images/background2.jpg',
+            'static/images/background3.jpg',
+            'static/images/background4.jpg',
+            'static/images/background5.jpg',
+            'static/images/background6.jpg',
+            'static/images/background7.jpg'
+        ];
+        
+        var randomImage = images[Math.floor(Math.random() * images.length)]; // 随机选择一个图片路径
+    
+        // 创建一个新的style元素
+        var style = document.createElement('style');
+        style.type = 'text/css';
+        style.innerHTML = `body::before {
+          content: "";
+          position: fixed;      // 关键：固定在视口
+          inset: 0;             // 等价 top/left/right/bottom:0
+          background-image: url('${randomImage}');
+          background-size: cover;
+          background-position: center;
+          opacity: 0.2;
+          z-index: -1;
+          pointer-events: none;
+        }`;
+        document.head.appendChild(style); // 将style元素添加到<head>中
+    });
+    */
+    
+</script>
+
+
+</html>

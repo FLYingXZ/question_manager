@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <title>批量导入题目</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/5.2.3/bootstrap.min.css') }}">
+    <style>
+        body {
+            background-color: #f5f7fa;
+        }
+
+        .import-wrapper {
+            max-width: 780px;
+            margin: 40px auto 50px;
+            padding: 30px 40px 25px;
+            background-color: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+            border: 1px solid #e4e8f0;
+        }
+
+        .import-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .import-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .import-title h2 {
+            margin: 0;
+            font-size: 22px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .import-title span {
+            font-size: 13px;
+            color: #95a5a6;
+        }
+
+        .import-note {
+            font-size: 13px;
+            color: #7f8c8d;
+            background: #f8f9fb;
+            border-radius: 6px;
+            padding: 10px 12px;
+            border-left: 3px solid #3498db;
+            margin-bottom: 18px;
+        }
+
+        .import-note strong {
+            color: #2c3e50;
+        }
+
+        .download-button {
+            font-size: 13px;
+            padding: 6px 12px;
+            border-radius: 4px;
+            border: 1px solid #3498db;
+            color: #3498db;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            background: #ecf6fd;
+        }
+
+        .download-button:hover {
+            background: #3498db;
+            color: #fff;
+            text-decoration: none;
+        }
+
+        .form-section-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #34495e;
+            margin: 18px 0 10px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .form-section-title span {
+            font-size: 11px;
+            font-weight: normal;
+            color: #95a5a6;
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        label {
+            font-size: 14px;
+            font-weight: 500;
+            color: #34495e;
+        }
+
+        .form-text {
+            font-size: 12px;
+        }
+
+        .file-help {
+            font-size: 12px;
+            color: #95a5a6;
+            margin-top: 4px;
+        }
+
+        .btn-primary {
+            width: 160px;
+            border-radius: 4px;
+            background: #3498db;
+            border-color: #3498db;
+            font-weight: 500;
+        }
+
+        .btn-primary:hover {
+            background: #2980b9;
+            border-color: #2980b9;
+        }
+
+        .btn-row {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 10px;
+        }
+
+        #progress p {
+            font-size: 13px;
+            color: #7f8c8d;
+        }
+
+        #message {
+            font-size: 14px;
+        }
+
+        .page-tip {
+            margin-top: 15px;
+            font-size: 12px;
+            color: #7f8c8d;
+            text-align: right;
+        }
+
+        .page-tip strong {
+            color: #34495e;
+        }
+
+        @media (max-width: 768px) {
+            .import-wrapper {
+                margin: 20px 10px 30px;
+                padding: 20px 16px 18px;
+            }
+
+            .import-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+
+            .btn-row {
+                justify-content: center;
+            }
+
+            .btn-primary {
+                width: 100%;
+            }
+
+            .page-tip {
+                text-align: left;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    {% extends 'header.html' %}
+    {% block content %}
+    <div class="import-wrapper">
+        <div class="import-header">
+            <div class="import-title">
+                <h2>批量导入题目</h2>
+                <span>支持从文档或模板中自动解析试题</span>
+            </div>
+            <a href="/static/model_question_upload.xlsx" class="download-button">下载导入模板</a>
+        </div>
+
+        <div class="import-note">
+            <strong>使用建议：</strong>优先使用模板文件进行导入，可提高解析准确率；从 docx/pdf 导入时，请尽量保持题号、选项、答案格式规范。
+        </div>
+
+        <form action="/upload_questions" method="post" enctype="multipart/form-data">
+            <div class="form-section-title">
+                试题文件
+                <span>必选，题干和选项来源文件</span>
+            </div>
+            <div class="form-group">
+                <label for="file">选择试题文件（支持 .xlsx / .docx / .pdf）</label>
+                <input type="file" class="form-control-file" id="file" name="file" accept=".xlsx,.docx,.pdf">
+                <div class="file-help">推荐优先使用模板 <code>.xlsx</code>；docx / pdf 适合从已有试卷中提取题目。</div>
+            </div>
+
+            <div class="form-section-title">
+                解析文件（可选）
+                <span>仅当试题文件中不含答案/解析时使用</span>
+            </div>
+            <div class="form-group">
+                <label for="analysis_file">选择解析文件（支持 .docx / .pdf）</label>
+                <input type="file" class="form-control-file" id="analysis_file" name="analysis_file"
+                    accept=".docx,.pdf">
+                <small class="form-text text-muted">如果试题文件中没有答案和解析，可以在此上传对应的解析文档，系统会尝试自动匹配题目。</small>
+            </div>
+
+            <div id="progress" class="mt-3" style="display: none;">
+                <div class="progress">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar"
+                        style="width: 100%"></div>
+                </div>
+                <p class="text-center mt-2">AI 正在解析试题，这可能需要一些时间，请稍候...</p>
+            </div>
+
+            <div class="btn-row">
+                <button type="submit" class="btn btn-primary">开始上传并解析</button>
+            </div>
+        </form>
+
+        <div id="message" class="mt-3"></div>
+
+        <div class="page-tip">
+            <strong>说明：</strong>暂不支持图片，需要手动上传；综合题格式较为复杂，目前自动解析效果一般，建议导入后人工检查和调整。
+        </div>
+    </div>
+
+    <script>
+        document.querySelector('form').addEventListener('submit', function (event) {
+            event.preventDefault();
+
+            const progressDiv = document.getElementById('progress');
+            const messageDiv = document.getElementById('message');
+            progressDiv.style.display = 'block';
+            messageDiv.innerHTML = '';
+
+            const formData = new FormData(event.target);
+
+            fetch('/upload_questions', {
+                method: 'POST',
+                body: formData
+            })
+                .then(response => response.json())
+                .then(data => {
+                    progressDiv.style.display = 'none';
+
+                    if (data.error) {
+                        messageDiv.innerHTML = `<div class="alert alert-danger" role="alert">${data.error}</div>`;
+                    } else {
+                        let message = `<div class="alert alert-success" role="alert">${data.message}</div>`;
+                        if (data.parsed_count !== undefined) {
+                            message += `<p class="mt-2" style="font-size:13px;color:#7f8c8d;">AI 共解析了 <strong>${data.parsed_count}</strong> 道试题，请在题目列表中核对。</p>`;
+                        }
+                        messageDiv.innerHTML = message;
+                    }
+                })
+                .catch(error => {
+                    progressDiv.style.display = 'none';
+                    messageDiv.innerHTML = `<div class="alert alert-danger" role="alert">上传失败，请重试。</div>`;
+                    console.error('Upload error:', error);
+                });
+        });
+    </script>
+    {% endblock %}
+</body>
+
+</html>

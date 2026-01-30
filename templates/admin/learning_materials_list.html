@@ -1,0 +1,20 @@
+{% extends 'header.html' %}
+{% block content %}
+<!-- learning_materials_list.html -->
+<head>
+    <meta charset="UTF-8">
+    <title>课件管理</title>
+</head>
+<body>
+    <h1>{{materials.title}}</h1>
+    <a href="{{ url_for('create_learning_material') }}">新增课件</a>
+    <ul>
+        {% for material in materials %}
+            <li>
+                <a href="{{ url_for('edit_learning_material', id=material.id) }}">{{material.title}} - {{ material.created_at }} - {% for cls in material.classes %}<span>{{ cls.name }}</span>{% endfor %}</a>
+                <a href="{{ url_for('delete_learning_material', id=material.id) }}">删除</a>
+            </li>
+        {% endfor %}
+    </ul>
+</body>
+{% endblock %}

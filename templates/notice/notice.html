@@ -1,0 +1,360 @@
+{% extends "header.html" %}
+{% block title %}公告栏{% endblock %}
+{% block content %}
+
+<style>
+  :root{
+    --bg: transparent;
+    --panel: rgba(255,255,255,.78);
+    --panel-strong: rgba(255,255,255,.92);
+    --text: #0f172a;
+    --muted: #64748b;
+    --line: rgba(15,23,42,.10);
+    --line-2: rgba(15,23,42,.08);
+    --primary: #2563eb;
+    --danger: #dc2626;
+    --warn: #d97706;
+    --radius: 18px;
+    --radius-sm: 12px;
+    --shadow: 0 18px 45px rgba(2,6,23,.10);
+    --shadow-sm: 0 10px 24px rgba(2,6,23,.08);
+    --blur: blur(10px);
+  }
+
+  .page{ padding: 22px 22px 28px; background: var(--bg); }
+  .wrap{ max-width: 1180px; margin: 0 auto; }
+
+  .page-head{
+    display:flex; align-items:flex-end; justify-content:space-between;
+    gap: 14px; margin-bottom: 16px;
+  }
+  .page-title{
+    margin:0; font-size: 22px; font-weight: 750; letter-spacing: .2px;
+    color: var(--text); display:flex; align-items:center; gap: 10px;
+  }
+  .badge-dot{
+    width: 10px; height: 10px; border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, #93c5fd 0%, var(--primary) 55%, #1d4ed8 100%);
+    box-shadow: 0 10px 22px rgba(37,99,235,.28);
+  }
+  .subtitle{ margin: 6px 0 0; font-size: 13px; color: var(--muted); }
+
+  .btns{ display:flex; gap:10px; flex-wrap: wrap; }
+  .btn{
+    appearance:none; border: 1px solid var(--line);
+    background: rgba(255,255,255,.65);
+    backdrop-filter: var(--blur);
+    color: var(--text);
+    border-radius: 999px;
+    padding: 9px 12px;
+    font-size: 13px; line-height: 1;
+    text-decoration:none;
+    display:inline-flex; align-items:center; gap: 8px;
+    transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease, background .15s ease;
+    box-shadow: 0 6px 16px rgba(2,6,23,.06);
+    cursor:pointer; white-space: nowrap;
+  }
+  .btn:hover{
+    transform: translateY(-1px);
+    box-shadow: 0 14px 28px rgba(2,6,23,.10);
+    border-color: rgba(37,99,235,.28);
+    background: rgba(255,255,255,.85);
+    color: var(--text);
+  }
+  .btn-primary{
+    border-color: rgba(37,99,235,.25);
+    background: linear-gradient(180deg, rgba(37,99,235,.14), rgba(37,99,235,.08));
+    color: #0b2a6f;
+  }
+  .btn-primary:hover{ border-color: rgba(37,99,235,.40); }
+  .btn-ghost{ background: transparent; box-shadow: none; }
+  .btn-ghost:hover{
+    background: rgba(255,255,255,.65);
+    box-shadow: 0 10px 22px rgba(2,6,23,.08);
+  }
+
+  .grid{
+    display:grid;
+    grid-template-columns: 1.35fr .65fr; /* 右侧更窄，让推荐阅读不要过于醒目 */
+    gap: 16px;
+    align-items:start;
+    margin-top: 14px;
+  }
+
+  .panel{
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    backdrop-filter: var(--blur);
+    overflow:hidden;
+  }
+  .panel-head{
+    padding: 14px 16px;
+    display:flex; align-items:center; justify-content:space-between;
+    gap: 10px;
+    border-bottom: 1px solid var(--line-2);
+    background: linear-gradient(180deg, rgba(255,255,255,.85), rgba(255,255,255,.55));
+  }
+  .panel-title{
+    margin:0;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+    display:flex; align-items:center; gap: 10px;
+  }
+  .pill{
+    font-size: 12px; color: var(--muted);
+    border: 1px solid var(--line);
+    background: rgba(255,255,255,.6);
+    border-radius: 999px;
+    padding: 4px 10px;
+  }
+  .panel-body{ padding: 8px; }
+
+  /* 左侧公告：整体字号上调 */
+  .list{ display:flex; flex-direction:column; gap: 8px; }
+  .item{
+    display:flex; gap: 12px; align-items:center;
+    padding: 14px 12px;
+    border-radius: var(--radius-sm);
+    border: 1px solid transparent;
+    transition: background .15s ease, border-color .15s ease, transform .15s ease;
+    background: transparent;
+  }
+  .item:hover{
+    background: rgba(255,255,255,.65);
+    border-color: rgba(37,99,235,.18);
+    transform: translateY(-1px);
+  }
+  .mark{
+    width: 10px; height: 10px; border-radius: 50%;
+    background: rgba(37,99,235,.35);
+    box-shadow: 0 10px 20px rgba(37,99,235,.12);
+    flex: 0 0 auto;
+    margin-left: 2px;
+  }
+  .item-main{ flex: 1; min-width: 0; }
+  .item-title{
+    display:block;
+    font-size: 15.5px;          /* ↑ 公告标题更大 */
+    font-weight: 700;
+    color: var(--text);
+    text-decoration:none;
+    white-space: nowrap;
+    overflow:hidden;
+    text-overflow: ellipsis;
+    letter-spacing: .2px;
+  }
+  .item-title:hover{ color: #1d4ed8; }
+  .meta{
+    margin-top: 6px;
+    font-size: 13px;            /* ↑ 公告时间更大 */
+    color: var(--muted);
+    display:flex; align-items:center; gap: 8px;
+  }
+  .meta .sep{
+    width: 4px; height: 4px; border-radius: 50%;
+    background: rgba(100,116,139,.55);
+  }
+
+  /* admin actions */
+  .actions{ display:flex; gap: 8px; align-items:center; flex: 0 0 auto; }
+  .icon-btn{
+    width: 32px; height: 32px;
+    border-radius: 10px;
+    border: 1px solid var(--line);
+    background: rgba(255,255,255,.65);
+    backdrop-filter: var(--blur);
+    display:inline-flex; align-items:center; justify-content:center;
+    cursor:pointer;
+    transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+    text-decoration:none;
+    color: var(--muted);
+  }
+  .icon-btn:hover{
+    transform: translateY(-1px);
+    box-shadow: 0 12px 22px rgba(2,6,23,.10);
+    border-color: rgba(15,23,42,.18);
+    color: var(--text);
+  }
+  .icon-btn.edit:hover{ border-color: rgba(217,119,6,.35); color: var(--warn); }
+  .icon-btn.del:hover{ border-color: rgba(220,38,38,.30); color: var(--danger); }
+
+  /* 右侧推荐阅读：改为两列、字不加粗、标题省略并 hover 显示完整 */
+  .cards{
+    display:grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr)); /* 一行2个 */
+    gap: 10px;
+    padding: 10px;
+  }
+  .card{
+    border-radius: 14px;
+    border: 1px solid var(--line);
+    background: rgba(255,255,255,.70); /* 稍微更“轻”一点 */
+    box-shadow: 0 8px 18px rgba(2,6,23,.06);
+    overflow:hidden;
+    transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+  }
+  .card:hover{
+    transform: translateY(-1px);
+    box-shadow: 0 14px 28px rgba(2,6,23,.10);
+    border-color: rgba(37,99,235,.18);
+  }
+  .thumb{
+    height: 64px; /* 降低视觉重量 */
+    width:100%;
+    object-fit: cover;
+    display:block;
+    background: linear-gradient(135deg, #dbeafe 0%, #eef2ff 45%, #f8fafc 100%);
+  }
+  .card-body{ padding: 10px 10px 9px; }
+  .card-title{
+    display:block;
+    font-size: 13px;
+    font-weight: 500;           /* 不加粗 */
+    color: var(--text);
+    text-decoration:none;
+
+    white-space: nowrap;
+    overflow:hidden;
+    text-overflow: ellipsis;     /* 超出省略号 */
+  }
+  .card-title:hover{ color:#1d4ed8; }
+  .card-meta{
+    margin-top: 6px;
+    font-size: 12px;
+    color: var(--muted);
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap: 10px;
+  }
+  .card-actions{ display:flex; gap: 8px; align-items:center; }
+
+  .empty{ padding: 22px 14px; text-align:center; color: var(--muted); font-size: 13px; }
+
+  @media (max-width: 992px){
+    .grid{ grid-template-columns: 1fr; }
+    .cards{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+  @media (max-width: 520px){
+    .cards{ grid-template-columns: 1fr; }
+  }
+</style>
+
+<div class="page">
+  <div class="wrap">
+    <div class="page-head">
+      <div>
+        <h1 class="page-title"><span class="badge-dot"></span> 公告栏</h1>
+        <p class="subtitle">最新通知与推荐阅读</p>
+      </div>
+
+      {% if current_user.is_authenticated and current_user.role == 'admin' %}
+      <div class="btns">
+        <a class="btn btn-primary" href="{{ url_for('add_notice_page') }}">添加公告</a>
+        <a class="btn btn-ghost" href="{{ url_for('add_recommended_reading') }}">添加推荐阅读</a>
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="grid">
+      <!-- Notices -->
+      <section class="panel">
+        <div class="panel-head">
+          <h2 class="panel-title">公告</h2>
+          <span class="pill">{{ notices|length }} 条</span>
+        </div>
+
+        <div class="panel-body">
+          {% if notices and notices|length > 0 %}
+          <div class="list">
+            {% for notice in notices %}
+            <div class="item">
+              <span class="mark" aria-hidden="true"></span>
+
+              <div class="item-main">
+                <a class="item-title" href="{{ url_for('notice_detail_page', id=notice.id) }}">{{ notice.title }}</a>
+                <div class="meta">
+                  <span>{{ notice.date_created.strftime('%Y-%m-%d %H:%M:%S') }}</span>
+                  <span class="sep" aria-hidden="true"></span>
+                  <span>公告</span>
+                </div>
+              </div>
+
+              {% if current_user.is_authenticated and current_user.role == 'admin' %}
+              <div class="actions">
+                <a class="icon-btn edit" title="编辑" href="{{ url_for('edit_notice_page', id=notice.id) }}">
+                  <i class="fa-solid fa-pen"></i>
+                </a>
+                <form action="{{ url_for('delete_notice', id=notice.id) }}" method="post"
+                      onsubmit="return confirm('确定删除这条公告吗？');" style="margin:0;">
+                  <button type="submit" class="icon-btn del" title="删除">
+                    <i class="fa-solid fa-trash"></i>
+                  </button>
+                </form>
+              </div>
+              {% endif %}
+            </div>
+            {% endfor %}
+          </div>
+          {% else %}
+          <div class="empty">暂无公告</div>
+          {% endif %}
+        </div>
+      </section>
+
+      <!-- Recommended reading -->
+      <aside class="panel">
+        <div class="panel-head">
+          <h2 class="panel-title">推荐阅读</h2>
+          <span class="pill">{{ recommended_readings|length }} 条</span>
+        </div>
+
+        {% if recommended_readings and recommended_readings|length > 0 %}
+        <div class="cards">
+          {% for reading in recommended_readings %}
+          <div class="card">
+            <img class="thumb" src="{{ reading.image_url }}" alt="{{ reading.title }}"
+                 onerror="this.style.display='none';">
+            <div class="card-body">
+              {# title 属性：鼠标悬停显示完整标题（原生 tooltip） #}
+              <a class="card-title"
+                 href="{{ reading.url }}"
+                 target="_blank"
+                 rel="noopener noreferrer"
+                 title="{{ reading.title }}">
+                {{ reading.title }}
+              </a>
+
+              <div class="card-meta">
+                <span>{{ reading.date_added.strftime('%Y-%m-%d %H:%M:%S') }}</span>
+
+                {% if current_user.is_authenticated and current_user.role == 'admin' %}
+                <div class="card-actions">
+                  <a class="icon-btn edit" title="编辑" href="{{ url_for('edit_recommended_reading', id=reading.id) }}">
+                    <i class="fa-solid fa-pen"></i>
+                  </a>
+                  <form action="{{ url_for('delete_recommended_reading', id=reading.id) }}" method="post"
+                        onsubmit="return confirm('确定删除这条推荐阅读吗？');" style="margin:0;">
+                    <button type="submit" class="icon-btn del" title="删除">
+                      <i class="fa-solid fa-trash"></i>
+                    </button>
+                  </form>
+                </div>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty">暂无推荐阅读</div>
+        {% endif %}
+      </aside>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

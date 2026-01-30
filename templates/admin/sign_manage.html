@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>签到记录</title>
+    <script src="{{ url_for('static', filename='jquery/jquery-3.6.0.min.js') }}"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/5.2.3/bootstrap.min.css') }}">
+</head>
+
+<body>
+
+    {% extends 'header.html' %}
+    {% block content %}
+    <div class="container">
+        <h1 class="text-center">签到记录查看</h1>
+        <form id="filterForm" class="d-flex align-items-center mb-4">
+            <input type="date" id="signInDate" class="form-control me-2" required>
+            <select id="classSelect" class="form-control me-2" required>
+                <option value="">请选择班级</option> <!-- 默认提示 -->
+            </select>
+            <button type="submit" class="btn btn-primary">查询</button>
+        </form>
+
+        <table class="table table-bordered table-hover mt-3">
+            <thead>
+                <tr>
+                    <th>学生账号</th>
+                    <th>学生昵称</th>
+                    <th>签到状态</th>
+                    <th>签到时间</th>
+                </tr>
+            </thead>
+            <tbody id="recordsTableBody"></tbody>
+        </table>
+    </div>
+
+    <script>
+        // 页面加载时请求所有班级并填充到下拉框中
+        $(document).ready(function() {
+            $.ajax({
+                url: '/classes', // 请求获取班级的后端接口
+                type: 'GET',
+                success: function(classes) {
+                    var classSelect = $('#classSelect');
+                    $.each(classes, function(index, cls) {
+                        classSelect.append($('<option>', {
+                            value: cls.name, // 将班级名称作为选项的值
+                            text: cls.name // 显示班级名称
+                        }));
+                    });
+                },
+                error: function(xhr) {
+                    console.log('获取班级失败:', xhr.responseJSON.error);
+                }
+            });
+
+            // 提交表单时查询签到记录
+            $('#filterForm').submit(function(event) {
+                event.preventDefault();
+                var signInDate = $('#signInDate').val();
+                var className = $('#classSelect').val(); // 获取选择的班级名称
+
+                if (!className) {
+                    alert('请选择一个班级');
+                    return;
+                }
+
+                $.getJSON('/admin/sign_in_records', {
+                    sign_in_date: signInDate,
+                    class_name: className
+                }, function(records) {
+                    var tableBody = $('#recordsTableBody');
+                    tableBody.empty();
+                    $.each(records, function(index, record) {
+                        var row = $('<tr></tr>');
+                        row.append($('<td></td>').text(record.username));
+                        row.append($('<td></td>').text(record.usernick));
+                        row.append($('<td></td>').text(record.status));
+                        row.append($('<td></td>').text(record.sign_in_time ? record.sign_in_time : '无'));
+                        tableBody.append(row);
+                    });
+                }).fail(function(xhr) {
+                    alert('查询失败: ' + xhr.responseJSON.message);
+                });
+            });
+        });
+    </script>
+    {% endblock %}
+</body>
+
+</html>

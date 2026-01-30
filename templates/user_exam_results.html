@@ -1,0 +1,417 @@
+{% extends "header.html" %}
+
+{% block content %}
+<style>
+  :root{
+    --brand: #3498db;
+    --brand-dark:#2980b9;
+    --ink:#2c3e50;
+    --muted:#6c757d;
+    --card:#ffffff;
+    --line:#e9ecef;
+    --shadow: 0 10px 28px rgba(44,62,80,.08);
+    --shadow-sm: 0 6px 16px rgba(44,62,80,.08);
+  }
+
+  /* header.html 已经设置了 body 背景等，这里只管内容区 */
+  .page-wrap{
+    padding: 18px 20px 26px;
+  }
+
+  .page-hero{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:16px;
+    padding:18px 18px;
+    border-bottom: 1px solid var(--line);
+    background: linear-gradient(135deg, rgba(52,152,219,.10), rgba(52,152,219,.03));
+  }
+
+  .hero-left .title{
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: var(--ink);
+    margin: 0 0 6px 0;
+    letter-spacing:.2px;
+  }
+
+  .hero-left .subtitle{
+    margin:0;
+    color: var(--muted);
+    font-size:.95rem;
+  }
+
+  .exam-pill{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius: 999px;
+    padding: 8px 12px;
+    box-shadow: var(--shadow-sm);
+    color: var(--ink);
+    white-space: nowrap;
+  }
+  .exam-pill i{ color: var(--brand); }
+
+  .toolbar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    padding: 14px 18px;
+  }
+
+  .btn-brand{
+    background: var(--brand);
+    border: 1px solid var(--brand);
+    color:#fff;
+    border-radius: 10px;
+    padding: 8px 12px;
+    font-weight: 600;
+    transition: .15s ease;
+  }
+  .btn-brand:hover{ background: var(--brand-dark); border-color: var(--brand-dark); color:#fff; transform: translateY(-1px); }
+
+  .btn-soft{
+    background: #eef6fd;
+    border: 1px solid #d6eafd;
+    color: #1c6aa0;
+    border-radius: 10px;
+    padding: 8px 12px;
+    font-weight: 600;
+  }
+  .btn-soft:hover{ background:#e3f1ff; }
+
+  .card{
+    background: var(--card);
+    border:1px solid var(--line);
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+    overflow:hidden;
+  }
+
+  /* 表格美化 */
+  .table-wrap{ padding: 0 18px 18px; }
+
+  table.table{
+    margin:0;
+    border-color: var(--line) !important;
+  }
+
+  .table thead th{
+    background: #f6f8fb !important;
+    color: #334155 !important;
+    font-weight: 800;
+    border-bottom: 1px solid var(--line) !important;
+    text-align:center;
+    vertical-align: middle;
+  }
+
+  .table tbody td{
+    border-color: var(--line) !important;
+    vertical-align: middle;
+  }
+
+  .table-hover tbody tr:hover{
+    background: rgba(52,152,219,.06) !important;
+  }
+
+  .col-compact{ width: 140px; }
+  .col-op{ width: 140px; }
+
+  /* 分数徽章 */
+  .score-badge{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    min-width: 62px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-weight: 800;
+    border: 1px solid var(--line);
+    background: #fff;
+  }
+  .score-good{ color:#0f766e; background:#ecfeff; border-color:#c8f2f4; }
+  .score-mid{ color:#b45309; background:#fffbeb; border-color:#fde68a; }
+  .score-low{ color:#b91c1c; background:#fef2f2; border-color:#fecaca; }
+
+  /* 详情按钮 */
+  .btn-view-details{
+    width:100%;
+    border-radius: 10px;
+    font-weight: 700;
+  }
+
+  /* Modal */
+  .modal-dialog-90{ max-width: 92%; }
+  @media (max-width: 768px){ .modal-dialog-90{ max-width: 98%; } }
+
+  .modal-content{
+    border-radius: 14px;
+    overflow:hidden;
+  }
+  .modal-header{
+    background: linear-gradient(135deg, #2c3e50, #34495e);
+    color:#fff;
+    border-bottom: none;
+  }
+  .modal-title{ font-weight: 800; }
+  .modal-body{
+    background: #fbfcfe;
+  }
+
+  /* 正误样式 */
+  .correct-answer{
+    background-color: #e9fbf0 !important;
+    color: #166534;
+    font-weight: 700;
+  }
+  .incorrect-answer{
+    background-color: #fff1f2 !important;
+    color: #9f1239;
+    font-weight: 700;
+  }
+
+  /* 解析区域 */
+  .analysis-row{ background: #f8fafc; }
+  .analysis-section{
+    margin-top: 6px;
+    padding: 12px 12px;
+    border: 1px dashed #cfe6fb;
+    background: #f3f8ff;
+    border-left: 4px solid var(--brand);
+    border-radius: 10px;
+    display:none;
+    max-height: 360px;
+    overflow-y:auto;
+  }
+  .analysis-title{
+    font-weight: 800;
+    color: var(--ink);
+    margin-bottom: 6px;
+  }
+  .toggle-analysis-btn{
+    color: var(--brand);
+    font-weight: 800;
+    text-decoration: none;
+    border: 1px solid #d6eafd;
+    background: #eef6fd;
+    padding: 6px 10px;
+    border-radius: 999px;
+  }
+  .toggle-analysis-btn:hover{
+    background:#e3f1ff;
+  }
+
+  /* 细节：内容列更舒服 */
+  .q-content{
+    line-height: 1.55;
+  }
+
+</style>
+
+<div class="page-wrap">
+  <div class="card">
+    <div class="page-hero">
+      <div class="hero-left">
+        <h1 class="title mb-0">我的做题结果</h1>
+        <p class="subtitle">查看每次提交得分与错题解析，支持展开/收起解析。</p>
+      </div>
+      <div class="exam-pill">
+        <i class="fas fa-scroll"></i>
+        <span><strong>试卷：</strong>{{ exam_name }}</span>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <a href="https://flying.zj.cn/exam_list" class="btn btn-brand">
+        <i class="fas fa-arrow-left me-1"></i> 返回试卷列表
+      </a>
+      <button class="btn btn-soft" type="button" id="refreshBtn">
+        <i class="fas fa-rotate me-1"></i> 刷新结果
+      </button>
+    </div>
+
+    <div class="table-wrap">
+      <div class="table-responsive">
+        <table id="resultTable" class="table table-bordered table-hover align-middle">
+          <thead>
+            <tr>
+              <th>试卷</th>
+              <th class="col-compact">分数</th>
+              <th class="col-compact">提交时间</th>
+              <th class="col-op">操作</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- 详情模态框 -->
+  <div class="modal fade" id="detailsModal" tabindex="-1" aria-labelledby="detailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-scrollable modal-dialog-90">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="detailsModalLabel">详细题目情况</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="关闭"></button>
+        </div>
+        <div class="modal-body">
+          <div class="table-responsive">
+            <table class="table table-bordered table-hover align-middle">
+              <thead>
+                <tr>
+                  <th style="width:90px;">题目ID</th>
+                  <th>题目内容</th>
+                  <th style="width:120px;">正确答案</th>
+                  <th style="width:120px;">你的答案</th>
+                  <th style="width:130px;">解析</th>
+                </tr>
+              </thead>
+              <tbody id="detailedAnswersBody"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  $(document).ready(function () {
+    var examId = {{ exam_id }};
+    var userId = {{ user_id }};
+
+    function scoreClass(score){
+      var s = Number(score);
+      if (isNaN(s)) return "";
+      if (s >= 90) return "score-badge score-good";
+      if (s >= 60) return "score-badge score-mid";
+      return "score-badge score-low";
+    }
+
+    function loadResults(){
+      $.getJSON('/my_exam_results/' + examId + "?user_id=" + userId, function (results) {
+        var tableBody = $('#resultTable tbody');
+        tableBody.empty();
+
+        if (!results || results.length === 0){
+          tableBody.append(
+            $('<tr></tr>').append(
+              $('<td colspan="4" class="text-center text-muted py-4"></td>').text('暂无提交记录')
+            )
+          );
+          return;
+        }
+
+        $.each(results, function (index, result) {
+          var row = $('<tr></tr>');
+
+          row.append($('<td class="text-center"></td>').text(result.exam_name || '—'));
+
+          var scoreTd = $('<td class="text-center"></td>');
+          scoreTd.append($('<span></span>').addClass(scoreClass(result.score)).text(result.score));
+          row.append(scoreTd);
+
+          row.append($('<td class="text-center"></td>').text(result.submitted_at || '—'));
+
+          var detailButton = $('<button></button>')
+            .html('<i class="fas fa-magnifying-glass me-1"></i>查看详情')
+            .addClass('btn btn-info btn-sm btn-view-details')
+            .data('result-id', result.id);
+
+          row.append($('<td class="text-center"></td>').append(detailButton));
+          tableBody.append(row);
+        });
+      }).fail(function (jqxhr, textStatus, error) {
+        console.log("请求失败: " + textStatus + ", " + error);
+      });
+    }
+
+    loadResults();
+    $('#refreshBtn').on('click', loadResults);
+
+    // 查看详情
+    $('#resultTable').on('click', '.btn-view-details', function () {
+      var resultId = $(this).data('result-id');
+
+      $.getJSON('/exam_detail/' + resultId + "?user_id=" + userId, function (detailedAnswers) {
+        var detailedBody = $('#detailedAnswersBody');
+        detailedBody.empty();
+
+        $.each(detailedAnswers, function (index, answer) {
+          var ua = (answer.user_answer || '').trim();
+          var ca = (answer.correct_answer || '').trim();
+          var isCorrect = ua === ca;
+
+          var detailRow = $('<tr></tr>');
+          detailRow.append($('<td class="text-center"></td>').text(answer.question_id));
+          detailRow.append($('<td class="q-content"></td>').html(answer.content || ''));
+          detailRow.append($('<td class="text-center"></td>').text(answer.correct_answer || ''));
+
+          var userAnswerCell = $('<td class="text-center"></td>').text(answer.user_answer || '');
+          userAnswerCell.addClass(isCorrect ? 'correct-answer' : 'incorrect-answer');
+          detailRow.append(userAnswerCell);
+
+          var analysisCell = $('<td class="text-center"></td>');
+          if (answer.analysis && answer.analysis.trim() !== "") {
+            var toggleButton = $('<button type="button"></button>')
+              .text('查看解析')
+              .addClass('toggle-analysis-btn')
+              .data('analysis', answer.analysis);
+            analysisCell.append(toggleButton);
+          } else {
+            analysisCell.text('暂无解析').addClass('text-muted');
+          }
+          detailRow.append(analysisCell);
+
+          detailedBody.append(detailRow);
+
+          // 解析行
+          if (answer.analysis && answer.analysis.trim() !== "") {
+            var analysisRow = $('<tr></tr>').addClass('analysis-row');
+            var analysisCellColSpan = $('<td></td>').attr('colspan', 5);
+            var analysisSection = $('<div></div>')
+              .addClass('analysis-section')
+              .html('<div class="analysis-title">解析</div>' + answer.analysis);
+            analysisCellColSpan.append(analysisSection);
+            analysisRow.append(analysisCellColSpan);
+            detailedBody.append(analysisRow);
+          }
+        });
+
+        var detailsModal = new bootstrap.Modal(document.getElementById('detailsModal'), {
+          backdrop: 'static',
+          keyboard: false
+        });
+        detailsModal.show();
+      }).fail(function (jqxhr, textStatus, error) {
+        console.log("请求失败: " + textStatus + ", " + error);
+      });
+    });
+
+    // 展开/收起解析
+    $('#detailedAnswersBody').on('click', 'button.toggle-analysis-btn', function () {
+      var button = $(this);
+      var currentRow = button.closest('tr');
+      var nextRow = currentRow.next('.analysis-row');
+      var analysisSection = nextRow.find('.analysis-section');
+
+      if (analysisSection.is(':visible')) {
+        analysisSection.slideUp(120);
+        button.text('查看解析');
+      } else {
+        analysisSection.slideDown(160);
+        button.text('隐藏解析');
+      }
+    });
+  });
+</script>
+{% endblock %}

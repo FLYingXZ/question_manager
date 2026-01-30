@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% block title %}详情-{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static',filename='css/detail.css') }}">
+<script>
+    function confirmDelete(event) {
+        if (!confirm("确定要删除吗？")) {
+            event.preventDefault();
+        }
+    }
+</script>
+{% endblock %}
+{% block main %}
+{% if request.args.get('message') %}
+<div class="alert alert-info" role="alert">
+    {{ request.args.get('message') }}
+</div>
+{% endif %}
+<h3 class="page-title">{{ post.title }}</h3>
+<p class="post-info">
+    <span>作者：{{ post.author.username }} | {{ post.author.usernick }}</span>
+    <span>时间：{{ post.create_time }}</span>
+</p>
+{% if post.author_id == current_user.id or current_user.role in ['admin', 'teacher'] %}
+<form action="{{ url_for('delete_post', post_id=post.id) }}" method="post" style="display:inline;">
+    <button type="submit" class="btn btn-danger btn-sm" onclick="confirmDelete(event)">删除帖子</button>
+</form>
+{% endif %}
+<hr />
+<p class="question-content">{{ post.content }}</p>
+<hr />
+<h4>评论：（{{ post_count}}）</h4>
+<form action="{{ url_for('add_reply') }}" method="post">
+    <div class="form-group">
+        <input type="text" name="reply_content" class="form-control" placeholder="请填写评论">
+        <input type="hidden" name="post_id" value="{{ post.id }}">
+    </div>
+    <div class="form-group" style="text-align: right">
+        <button type="submit" class="btn btn-primary">评论</button>
+    </div>
+</form>
+<ul class="answer-list">
+    {% for reply in post.replys %}
+    <li>
+        <div class="user-info">
+            <img src="{% if 'qq.com' in reply.author.email %}https://q1.qlogo.cn/g?b=qq&nk={{ reply.author.email.split('@')[0] }}&s=100{% else %}/static/images/1110055.png{% endif %}" alt="用户头像" class="avatar">
+            <span class="username">{{ reply.author.username }}</span>
+            <span class="username">{{ reply.author.usernick }}</span>
+            <span class="create-time">{{ reply.create_time }}</span>
+            {% if reply.author_id == current_user.id or current_user.role in ['admin', 'teacher'] %}
+            <form action="{{ url_for('delete_reply', reply_id=reply.id) }}" method="post" style="display:inline;">
+                <button type="submit" class="btn" onclick="confirmDelete(event)">×</button>
+            </form>
+            {% endif %}
+        </div>
+        <p class="answer-content">{{ reply.content }}</p>
+    </li>
+    {% endfor %}
+</ul>
+{% endblock %}

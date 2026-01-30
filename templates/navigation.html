@@ -1,0 +1,114 @@
+<head>
+    <meta charset="UTF-8">
+    <title>网址导航</title>
+    <!-- 新 Bootstrap 核心 CSS 文件 -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/5.2.3/bootstrap.min.css') }}">
+    <script src="{{ url_for('static', filename='js/5.2.3/bootstrap.bundle.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='jquery/jquery-3.6.0.min.js') }}"></script>
+
+    <!-- 默认弹出模态框脚本开始 -->
+    <script type="text/javascript">
+        $(function() {
+            $("#myModal").modal({
+                keyboard: true
+            });
+        });
+    </script>
+    <!-- 默认弹出模态框脚本结束 -->
+</head>
+{% extends 'header.html' %}
+{% block content %}
+
+<body class="bg-light">
+
+    <!-- 默认模态框 -->
+    <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <h3 class="modal-title" id="myModalLabel">信息公告</h3>
+                </div>
+                <div class="modal-body">
+                    <img src="https://#" alt="" style="width:100%;">
+                    <p class="mt-3">更多内容...</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" data-dismiss="modal">我已知晓,继续访问</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- 默认模态框 -->
+
+    <div class="container py-5">
+        <div class="text-center mb-4">
+            <div class="alert alert-info">
+                <h1><strong>网址导航</strong></h1>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- 新闻媒体 -->
+            <div class="col-md-6 mb-4">
+                <div class="card shadow-sm border-light">
+                    <div class="card-header bg-primary text-white">
+                        <h3 class="card-title">新闻媒体</h3>
+                    </div>
+                    <div class="card-body">
+                        <a href="https://www.cctv.com/" class="btn btn-outline-primary btn-sm w-100 mb-2">CCTV央视网</a>
+                        <a href="https://www.gqt.org.cn/" class="btn btn-outline-primary btn-sm w-100 mb-2">中国共青团</a>
+                        <a href="https://digitalpaper.stdaily.com/" class="btn btn-outline-primary btn-sm w-100 mb-2">科技日报</a>
+                        <a href="https://zqb.cyol.com/" class="btn btn-outline-primary btn-sm w-100 mb-2">中国青年报</a>
+                        <a href="http://paper.jyb.cn/" class="btn btn-outline-primary btn-sm w-100 mb-2">中国教育报</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 学习资料 -->
+            <div class="col-md-6 mb-4">
+                <div class="card shadow-sm border-light">
+                    <div class="card-header bg-success text-white">
+                        <h3 class="card-title">学习资料</h3>
+                    </div>
+                    <div class="card-body">
+                        <!-- <a href="/document" class="btn btn-outline-success btn-sm w-100 mb-2">所有课件及资料</a> -->
+                        <a href="/learning_markdown" class="btn btn-outline-success btn-sm w-100 mb-2">PYTHON教程</a>
+                        <a href="https://zty.pe/" class="btn btn-outline-success btn-sm w-100 mb-2">打字练习网站</a>
+                        <a href="https://zty.pe/?text=e13f5a712122b961" class="btn btn-outline-success btn-sm w-100 mb-2">打字练习网站（python版）</a>
+                        <a href="http://2.75.81.1" class="btn btn-outline-success btn-sm w-100 mb-2">python练习平台</a>
+                        <!-- <a href="https://flying.zj.cn/_uploads/photos/files/%E9%A2%98%E8%A7%A3%E5%90%88%E9%9B%86-%E4%B9%89%E4%B9%8C%E4%B8%AD%E5%AD%A6%E5%9C%A8%E7%BA%BF%E5%AE%9E%E8%B7%B5%E7%B3%BB%E7%BB%9F.pdf" class="btn btn-outline-success btn-sm w-100 mb-2">题解合集-义乌中学在线实践系统（更新中...）</a> -->
+                        
+                    </div>
+                </div>
+            </div>
+
+            <!-- 常用软件 -->
+            <div class="col-md-6 mb-4">
+                <div class="card shadow-sm border-light">
+                    <div class="card-header bg-info text-dark">
+                        <h3 class="card-title">常用软件</h3>
+                    </div>
+                    <div class="card-body">
+                        <a href="/_uploads/photos/files/thonny-4.1.6.exe" class="btn btn-outline-success btn-sm w-100 mb-2">PYTHON编程 Thonny4.1.6</a>
+                        <a href="/_uploads/photos/files/thonny_2021.zip" class="btn btn-outline-success btn-sm w-100 mb-2">PYTHON编程 Thonny4.1.6 (win7)</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 其他 -->
+            <div class="col-md-6 mb-4">
+                <div class="card shadow-sm border-light">
+                    <div class="card-header bg-secondary text-white">
+                        <h3 class="card-title">其他</h3>
+                    </div>
+                    <div class="card-body">
+                        <a href="https://www.lishichelun.com/" class="btn btn-outline-secondary btn-sm w-100 mb-2">历史车轮</a>
+                        <!-- <a href="/history_today" class="btn btn-outline-secondary btn-sm w-100 mb-2">历史上的今天</a> 注释：数据源不好，有一些不合适的信息-->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+{% endblock %}

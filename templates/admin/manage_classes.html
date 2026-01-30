@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+    <meta charset="UTF-8">
+    <title>管理班级</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/5.2.3/bootstrap.min.css') }}">
+</head>
+
+<body>
+
+    {% extends 'header.html' %}
+    {% block content %}
+    <div class="container">
+        <h1 class="mt-5">管理班级</h1>
+        <form id="addClassForm" class="my-3">
+            <div class="form-group">
+                <label for="className">班级名称</label>
+                <input type="text" class="form-control" id="className" placeholder="输入班级名称" required>
+            </div>
+            <button type="submit" class="btn btn-primary">添加班级</button>
+        </form>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>名称</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody id="classList">
+                <!-- 班级列表将会在这里显示 -->
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            fetchClasses();
+
+            document.getElementById('addClassForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const className = document.getElementById('className').value;
+                addClass(className);
+            });
+        });
+
+        function fetchClasses() {
+            fetch('/classes')
+                .then(response => response.json())
+                .then(data => {
+                    const classList = document.getElementById('classList');
+                    classList.innerHTML = '';
+                    data.forEach(cls => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                        <td>${cls.id}</td>
+                        <td><a style="text-decoration: none;" href="/class/analysis/${cls.id}">${cls.name}</td>
+                        <td>
+                            <button class="btn btn-warning btn-sm" onclick="editClass(${cls.id}, '${cls.name}')">编辑</button>
+                            <button class="btn btn-danger btn-sm" onclick="deleteClass(${cls.id})">删除</button>
+                        </td>
+                    `;
+                        classList.appendChild(row);
+                    });
+                });
+        }
+
+        function addClass(name) {
+            fetch('/add_classes', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        name: name
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        alert(data.error);
+                    } else {
+                        fetchClasses();
+                        document.getElementById('className').value = '';
+                    }
+                });
+        }
+
+        function editClass(id, name) {
+            const newName = prompt('输入新的班级名称', name);
+            if (newName) {
+                fetch(`/classes/${id}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            name: newName
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.error) {
+                            alert(data.error);
+                        } else {
+                            fetchClasses();
+                        }
+                    });
+            }
+        }
+
+        function deleteClass(id) {
+            if (confirm('你确定要删除这个班级吗？')) {
+                fetch(`/classes/${id}`, {
+                        method: 'DELETE'
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.error) {
+                            alert(data.error);
+                        } else {
+                            fetchClasses();
+                        }
+                    });
+            }
+        }
+    </script>
+    {% endblock %}
+</body>
+
+</html>

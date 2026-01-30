@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block title %}首页{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static',filename='css/index.css') }}">
+{% endblock %}
+{% block main %}
+<p>关于论坛的说明</p>
+<p>1.仅用作课内问题交流，禁止一切不当言论！</p>
+<p>2.头像暂无法设置，可通过更换邮箱为qq邮箱设置qq头像</p>
+<p>3.目前仅功能测试，后期会删除所有论坛数据</p>
+<ul class="question-list">
+    {% for post in posts %}
+    <li>
+        <div class="avatar-group">
+            <a href="{{ url_for('post_detail_page',post_id=post.id) }}"><img src="{% if 'qq.com' in post.author.email %}https://q1.qlogo.cn/g?b=qq&nk={{ post.author.email.split('@')[0] }}&s=100{% else %}/static/images/1110055.png{% endif %}" alt="用户头像" class="avatar"></a>
+        </div>
+        <div class="question-group">
+            <p class="question-title"><a href="{{ url_for('post_detail_page',post_id=post.id) }}">{{ post.title }}</a></p>
+            <p class="question-content">{{ post.content }}</p>
+            <div class="question-info">
+                <span class="question-author">{{ post.author.username }} | {{ post.author.usernick }}<b>({{len(post.replys)}})</b></span>
+                <span class="question-time">{{ post.create_time }}</span>
+            </div>
+        </div>
+    </li>
+    {% endfor %}
+</ul>
+{% endblock %}

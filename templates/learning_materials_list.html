@@ -1,0 +1,13 @@
+{% extends 'header.html' %}
+{% block content %}
+<!-- learning_materials_list.html for student -->
+<ul>
+    {% for material in materials %}
+        <li>
+            <a href="{{ url_for('view_learning_material', material_id=material.id) }}">
+                {{ material.title }} - {{ material.creator.username }}
+            </a>
+        </li>
+    {% endfor %}
+</ul>
+{% endblock %}

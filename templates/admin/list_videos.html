@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Video Player</title>
+    <link rel="icon" href="/static/favicon.ico" type="image/x-icon">
+    <script>
+        window.videoTogetherWebsiteSettingUrl = "/yiqikan";
+    </script>
+    <script src="{{ url_for('static', filename='js/extension.website.user.js') }}"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+
+        .video-list-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .delete-video {
+            background-color: #d9534f;
+            /* 红色背景 */
+            color: white;
+            /* 白色文字 */
+            border: none;
+            /* 无边框 */
+            padding: 5px 10px;
+            /* 内边距调整 */
+            border-radius: 5px;
+            /* 圆角边框 */
+            text-decoration: none;
+            /* 去除下划线 */
+            font-size: 14px;
+            /* 字体大小 */
+            transition: background-color 0.3s;
+            /* 过渡效果 */
+        }
+
+        .delete-video:hover {
+            background-color: #c9302c;
+            /* 悬停时的背景颜色 */
+        }
+
+        .video-container {
+            display: flex;
+            max-width: 1500px;
+            margin: auto;
+
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .video-area {
+            width: 70%;
+            /* 或者设置一个具体的宽度，如 800px */
+            padding: 10px;
+        }
+
+        #videoPlayer {
+            width: 100%;
+            /* 视频播放器宽度充满整个 .video-area 容器 */
+            height: auto;
+            /* 高度自动调整以保持原始视频的长宽比 */
+            aspect-ratio: 16 / 9;
+            /* 设置期望的长宽比 */
+        }
+
+        .list-area {
+            flex: 1;
+            padding: 10px;
+            overflow-y: auto;
+            height: 600px;
+            /* 可根据需要调整 */
+        }
+
+        .highlighted {
+            background-color: #39c5bb !important;
+            /* 高亮颜色，可根据需要调整 */
+        }
+
+        .video-item {
+            background-color: #fff;
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+            width: 300px;
+        }
+
+        video {
+            width: 100%;
+            max-height: 500px;
+            /* 设置固定高度 */
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        /* 新增样式 */
+        .control-buttons {
+            display: flex;
+            justify-content: center;
+            margin-top: 10px;
+        }
+
+        .control-button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            margin: 0 5px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .control-button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+
+<body>
+    {% extends 'header.html' %}
+    {% block content %}
+    <div class="video-container">
+        <!-- 视频播放区域 -->
+        <div class="video-area">
+            <div id="currentVideoTitle" style="margin-bottom: 10px;"></div>
+            <video id="videoPlayer" controls>
+                Your browser does not support the video tag.
+            </video>
+            <!-- 新增控制按钮 -->
+            <div class="control-buttons">
+                <button class="control-button" onclick="playPrevious()">上一首</button>
+                <button class="control-button" onclick="togglePlayMode()">顺序播放</button>
+                <button class="control-button" onclick="playNext()">下一首</button>
+            </div>
+        </div>
+
+        <!-- 视频列表区域 -->
+        <div class="list-area">
+            {% for video in videos %}
+            <div class="video-list-item">
+                <div class="video-item" onclick="playVideo('video/{{ video }}')">
+                    {{ video }}
+                </div>
+                <a href="{{ url_for('delete_video', filename=video) }}" class="delete-video btn btn-danger" data-filename="{{ video }}">Delete</a>
+            </div>
+            {% else %}
+            <div class="video-item">No videos uploaded yet.</div>
+            {% endfor %}
+        </div>
+    </div>
+    <div class="new-container">
+        <!-- 上传视频表单 -->
+        <h2>上传新视频</h2>
+        <div>
+            <form id="uploadForm" action="{{ url_for('upload_video') }}" method="post" enctype="multipart/form-data">
+                <input type="file" name="file" accept="video/mp4">
+                <!-- 上传视频按钮 -->
+                <input type="submit" value="Upload" class="btn btn-primary">
+            </form>
+        </div>
+    </div>
+    <!-- JavaScript -->
+    <script>
+        var playMode = 'sequential'; // 初始播放模式为顺序播放
+
+        // 视频播放函数
+        function playVideo(videoUrl, videoTitle) {
+            var videoPlayer = document.getElementById('videoPlayer');
+            var currentVideoTitle = document.getElementById('currentVideoTitle');
+
+            currentVideoTitle.textContent = "当前播放: " + videoTitle;
+
+            videoPlayer.removeEventListener('loadeddata', playWhenLoaded);
+
+            function playWhenLoaded() {
+                videoPlayer.play();
+            }
+
+            videoPlayer.addEventListener('loadeddata', playWhenLoaded);
+
+            videoPlayer.src = videoUrl;
+            videoPlayer.load();
+
+            document.querySelectorAll('.video-item').forEach(item => {
+                item.classList.remove('highlighted');
+                if (item.textContent.trim() === videoTitle) {
+                    item.classList.add('highlighted');
+                    var rect = item.getBoundingClientRect();
+                    var isVisible = (rect.top >= 0) && (rect.bottom <= window.innerHeight);
+                    if (!isVisible) {
+                        item.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
+                    }
+                }
+            });
+        }
+
+        document.querySelectorAll('.video-item').forEach(item => {
+            item.addEventListener('click', function() {
+                var videoTitle = this.textContent.trim();
+                var videoUrl = 'video/' + videoTitle;
+                playVideo(videoUrl, videoTitle);
+            });
+        });
+
+        // 播放下一首视频
+        function playNext() {
+            if (playMode === 'random') {
+                var videos = document.querySelectorAll('.list-area .video-item');
+                var randomIndex = Math.floor(Math.random() * videos.length);
+                playVideo('video/' + videos[randomIndex].textContent.trim(), videos[randomIndex].textContent.trim());
+            } else {
+                var videoPlayer = document.getElementById('videoPlayer');
+                var currentVideoUrl = videoPlayer.src;
+                var decodedCurrentVideoUrl = decodeURIComponent(currentVideoUrl);
+                var currentVideoFileName = decodedCurrentVideoUrl.substring(decodedCurrentVideoUrl.lastIndexOf('/') + 1);
+                var videos = document.querySelectorAll('.list-area .video-item');
+                var nextIndex;
+
+                for (var i = 0; i < videos.length; i++) {
+                    var videoFileName = videos[i].textContent.trim();
+                    if (videoFileName === currentVideoFileName) {
+                        nextIndex = (i + 1) % videos.length;
+                        break;
+                    }
+                }
+                playVideo('video/' + videos[nextIndex].textContent.trim(), videos[nextIndex].textContent.trim());
+            }
+        }
+
+        // 播放上一首视频
+        function playPrevious() {
+            var videoPlayer = document.getElementById('videoPlayer');
+            var currentVideoUrl = videoPlayer.src;
+            var decodedCurrentVideoUrl = decodeURIComponent(currentVideoUrl);
+            var currentVideoFileName = decodedCurrentVideoUrl.substring(decodedCurrentVideoUrl.lastIndexOf('/') + 1);
+            var videos = document.querySelectorAll('.list-area .video-item');
+            var prevIndex;
+
+            for (var i = 0; i < videos.length; i++) {
+                var videoFileName = videos[i].textContent.trim();
+                if (videoFileName === currentVideoFileName) {
+                    prevIndex = (i - 1 + videos.length) % videos.length;
+                    break;
+                }
+            }
+            playVideo('video/' + videos[prevIndex].textContent.trim(), videos[prevIndex].textContent.trim());
+        }
+
+        // 切换播放模式
+        function togglePlayMode() {
+            var button = document.querySelector('.control-buttons button:nth-child(2)');
+            if (playMode === 'sequential') {
+                playMode = 'random';
+                button.textContent = '随机播放';
+            } else if (playMode === 'random') {
+                playMode = 'single';
+                button.textContent = '单曲循环';
+            } else {
+                playMode = 'sequential';
+                button.textContent = '顺序播放';
+            }
+        }
+
+        // 监听视频结束事件，自动播放下一个视频
+        document.getElementById('videoPlayer').addEventListener('ended', function() {
+            if (playMode === 'random') {
+                var videos = document.querySelectorAll('.list-area .video-item');
+                var randomIndex = Math.floor(Math.random() * videos.length);
+                playVideo('video/' + videos[randomIndex].textContent.trim(), videos[randomIndex].textContent.trim());
+            } else if (playMode === 'single') {
+                this.play();
+            } else {
+                playNext();
+            }
+        });
+
+        // 上传视频提示框
+        document.getElementById('uploadForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            var formData = new FormData(this);
+            fetch("{{ url_for('upload_video') }}", {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    alert(data.message);
+                    window.location.reload();
+                })
+                .catch(error => alert('Error: ' + error));
+        });
+
+        // 删除视频提示框
+        document.querySelectorAll('.delete-video').forEach(item => {
+            item.addEventListener('click', function(e) {
+                e.preventDefault();
+                var filename = this.getAttribute('data-filename');
+
+                var confirmed = confirm('Are you sure you want to delete this video?');
+                if (!confirmed) {
+                    return;
+                }
+
+                fetch("{{ url_for('delete_video', filename='') }}" + filename, {
+                        method: 'GET'
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        alert(data.message);
+                        this.parentElement.remove();
+                    })
+                    .catch(error => alert('Error: ' + error));
+            });
+        });
+    </script>
+    {% endblock %}
+</body>
+
+</html>

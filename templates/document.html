@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>学习资料</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        form {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        select,
+        input[type="file"],
+        button {
+            margin: 0 10px;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        button {
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        #materials {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        h2 {
+            cursor: pointer;
+            background-color: #4D4D4D;
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            transition: background-color 0.3s ease;
+        }
+
+        h2:hover {
+            background-color: #333;
+        }
+
+        ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        li {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+            background-color: #fff;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            transition: box-shadow 0.3s ease;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        li:hover {
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .required-one {
+            background-color: #007BFF;
+        }
+
+        .required-two {
+            background-color: #ED9100;
+        }
+
+        .elective-one {
+            background-color: #2DBA00;
+        }
+
+        li ul {
+            display: none;
+            padding-left: 20px;
+        }
+
+        li ul li {
+            background-color: #f9f9f9;
+            padding: 5px 10px;
+        }
+
+        li ul li a {
+            text-decoration: none;
+            color: #007BFF;
+            transition: color 0.3s ease;
+        }
+
+        li ul li a:hover {
+            color: #0056b3;
+        }
+
+        .material-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .material-actions a,
+        .material-actions button {
+            text-decoration: none;
+            color: #007BFF;
+            transition: color 0.3s ease;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .material-actions a:hover,
+        .material-actions button:hover {
+            color: #0056b3;
+        }
+
+        .material-note {
+            padding: 5px;
+            border-radius: 5px;
+            color: white;
+        }
+
+        .note-blue {
+            background-color: blue;
+        }
+
+        .note-red {
+            background-color: red;
+        }
+
+        .note-green {
+            background-color: green;
+        }
+
+        .note-orange {
+            background-color: orange;
+        }
+
+        .note-gray {
+            background-color: gray;
+        }
+
+        #previewModal,
+        #editModal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.5);
+            align-items: center;
+            justify-content: center;
+        }
+
+        #previewModalContent,
+        #editModalContent {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            max-width: 80%;
+            max-height: 80%;
+            overflow: auto;
+        }
+
+        #previewModalClose,
+        #editModalClose {
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            font-size: 24px;
+            cursor: pointer;
+        }
+
+        #editModal form {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        #editModal form input,
+        #editModal form button {
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        #editModal form button {
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        #editModal form button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+
+<body>
+    {% extends 'header.html' %}
+    {% block content %}
+    <h1>学习资料</h1>
+    <form action="/upload_document" method="post" enctype="multipart/form-data">
+        <label for="section">Select Section:</label>
+        <select name="section_id" id="section">
+            {% for chapter in chapters %}
+            <optgroup label="{{ chapter.name }}">
+                {% for section in chapter.sections %}
+                <option value="{{ section.id }}">{{ section.name }}</option>
+                {% endfor %}
+            </optgroup>
+            {% endfor %}
+        </select>
+        <input type="file" name="file">
+        <button type="submit">Upload</button>
+    </form>
+
+    <div id="materials">
+        {% for chapter in chapters %}
+        <h2 class="{% if '必修一' in chapter.name %}required-one{% elif '必修二' in chapter.name %}required-two{% elif '选修一' in chapter.name %}elective-one{% endif %}">{{ chapter.name }}</h2>
+        <ul style="display: none">
+            {% for section in chapter.sections %}
+            <li>
+                <span class="section-title">{{ section.name }}</span>
+                <ul>
+                    {% for material in section.materials %}
+                    <li>
+                        <div>{{ material.filename }}</div>
+
+                        <div class="material-actions">
+
+                            {% if material.note %}
+                            <div class="material-note {% if material.note == '课件' %}note-red{% elif material.note == '作业' %}note-green{% elif material.note == '材料' %}note-orange{% else %}note-gray{% endif %}">{{ material.note }}</div>
+                            {% endif %}
+                            <table border="0">
+                                <th><a href="{{ url_for('download_document', filename=material.filename) }}">下载</a></th>
+                                <th><a class="preview-link" data-filename="{{ material.filename }}" data-type="{{ material.filename.split('.')[-1] }}">预览</a></th>
+                                {% if current_user_role == 'admin' or current_user_role == 'teacher' %}
+                                <th><button type="button" class="edit-button" data-id="{{ material.id }}">编辑</button></th>
+                                <td>
+                                    <form action="{{ url_for('delete_document', material_id=material.id) }}" method="post" style="display:inline;">
+                                        <button type="submit" onclick="return confirmDelete()">删除</button>
+                                    </form>
+                                </td>
+                                {% endif %}
+                            </table>
+
+
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </li>
+            {% endfor %}
+        </ul>
+        {% endfor %}
+    </div>
+
+    <div id="previewModal">
+        <div id="previewModalContent">
+            <span id="previewModalClose">&times;</span>
+            <div id="previewContent"></div>
+        </div>
+    </div>
+
+    <div id="editModal">
+        <div id="editModalContent">
+            <span id="editModalClose">&times;</span>
+            <form id="editForm" method="post">
+                <input type="text" name="new_name" placeholder="新名称">
+                <input type="text" name="new_note" placeholder="备注">
+                <button type="submit">保存</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/PPTXjs-1.21.1/js/jquery-1.11.3.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/PPTXjs-1.21.1/js/jszip.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/PPTXjs-1.21.1/js/filereader.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/PPTXjs-1.21.1/js/d3.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/PPTXjs-1.21.1/js/nv.d3.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/PPTXjs-1.21.1/js/pptxjs.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/PPTXjs-1.21.1/js/divs2slides.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/PPTXjs-1.21.1/js/jquery.fullscreen-min.js') }}"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='js/PPTXjs-1.21.1/css/pptxjs.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='js/PPTXjs-1.21.1/css/nv.d3.min.css') }}">
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const chapters = document.querySelectorAll("h2");
+            chapters.forEach(chapter => {
+                chapter.addEventListener("click", function() {
+                    const sectionList = this.nextElementSibling;
+                    sectionList.style.display = (sectionList.style.display === "block") ? "none" : "block";
+                });
+            });
+
+            const sectionTitles = document.querySelectorAll(".section-title");
+            sectionTitles.forEach(title => {
+                title.addEventListener("click", function() {
+                    const materialList = this.nextElementSibling;
+                    materialList.style.display = (materialList.style.display === "block") ? "none" : "block";
+                });
+            });
+
+            const previewLinks = document.querySelectorAll(".preview-link");
+            const previewModal = document.getElementById("previewModal");
+            const previewModalClose = document.getElementById("previewModalClose");
+            const previewContent = document.getElementById("previewContent");
+
+            previewLinks.forEach(link => {
+                link.addEventListener("click", function(event) {
+                    event.preventDefault();
+                    const filename = this.getAttribute("data-filename");
+                    const filetype = this.getAttribute("data-type");
+
+                    fetch(`/get_preview_url/${encodeURIComponent(filename)}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            const fileUrl = data.file_url;
+                            const filetype = data.filetype;
+
+                            if (filetype === 'docx') {
+                                fetch(fileUrl)
+                                    .then(response => response.arrayBuffer())
+                                    .then(arrayBuffer => mammoth.convertToHtml({
+                                        arrayBuffer: arrayBuffer
+                                    }))
+                                    .then(result => {
+                                        previewContent.innerHTML = result.value;
+                                        previewModal.style.display = "flex";
+                                    })
+                                    .catch(console.error);
+                            } else if (filetype === 'pptx') {
+                                $("#previewContent").pptxToHtml({
+                                    pptxFileUrl: fileUrl,
+                                    slideMode: false,
+                                    keyBoardShortCut: false
+                                });
+                                previewModal.style.display = "flex";
+                            }
+                        })
+                        .catch(console.error);
+                });
+            });
+
+
+            // Confirm delete function
+            window.confirmDelete = function() {
+                return confirm("确定要删除该文件吗？");
+            };
+
+
+            previewModalClose.addEventListener("click", function() {
+                previewModal.style.display = "none";
+                previewContent.innerHTML = "";
+            });
+
+            window.addEventListener("click", function(event) {
+                if (event.target === previewModal) {
+                    previewModal.style.display = "none";
+                    previewContent.innerHTML = "";
+                }
+            });
+
+            // Handle edit modal
+            const editButtons = document.querySelectorAll(".edit-button");
+            const editModal = document.getElementById("editModal");
+            const editModalClose = document.getElementById("editModalClose");
+            const editForm = document.getElementById("editForm");
+            let currentMaterialId = null;
+
+            editButtons.forEach(button => {
+                button.addEventListener("click", function(event) {
+                    event.preventDefault();
+                    currentMaterialId = this.getAttribute("data-id");
+                    fetch(`/get_material/${currentMaterialId}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            editForm.elements['new_name'].value = data.name;
+                            editForm.elements['new_note'].value = data.note;
+                            editModal.style.display = "flex";
+                        })
+                        .catch(console.error);
+                });
+            });
+
+            editForm.addEventListener("submit", function(event) {
+                event.preventDefault();
+                const formData = new FormData(editForm);
+                fetch(`/edit_document/${currentMaterialId}`, {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            location.reload();
+                        }
+                    })
+                    .catch(console.error);
+            });
+
+            editModalClose.addEventListener("click", function() {
+                editModal.style.display = "none";
+            });
+
+            window.addEventListener("click", function(event) {
+                if (event.target === editModal) {
+                    editModal.style.display = "none";
+                }
+            });
+        });
+    </script>
+    {% endblock %}
+</body>
+
+</html>

@@ -1,0 +1,28 @@
+{% extends "header.html" %}
+{% block title %}添加推荐阅读{% endblock %}
+
+{% block content %}
+<div class="ui container" style="margin-top: 50px;">
+    <h2 class="ui header">
+        <i class="book icon"></i>
+        <div class="content">
+            添加推荐阅读
+        </div>
+    </h2>
+    <form action="{{ url_for('add_recommended_reading') }}" method="post" class="ui form">
+        <div class="field">
+            <label>标题</label>
+            <input type="text" name="title" placeholder="推荐阅读标题" required>
+        </div>
+        <div class="field">
+            <label>封面</label>
+            <input type="url" name="image_url" required>
+        </div>
+        <div class="field">
+            <label>链接</label>
+            <input type="url" name="url" placeholder="https://example.com" required>
+        </div>
+        <button type="submit" class="ui primary button">添加</button>
+    </form>
+</div>
+{% endblock %}

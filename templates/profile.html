@@ -1,0 +1,429 @@
+{% extends 'header.html' %}
+{% block content %}
+
+<style>
+  :root{
+    --bg: #f5f7fb;
+    --card: #ffffff;
+    --text: #0f172a;
+    --muted: #64748b;
+    --line: rgba(15, 23, 42, .10);
+    --primary: #2563eb;
+    --primary-600:#1d4ed8;
+    --shadow: 0 10px 30px rgba(2, 6, 23, .10);
+    --radius: 16px;
+  }
+
+  .profile-page{
+    background: radial-gradient(1200px 400px at 20% 0%, rgba(37,99,235,.12), transparent 60%),
+                radial-gradient(900px 300px at 90% 10%, rgba(16,185,129,.10), transparent 60%),
+                var(--bg);
+    padding: 28px 0 40px;
+  }
+
+  .profile-wrap{
+    max-width: 1100px;
+  }
+
+  .cardx{
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+  }
+
+  .page-title{
+    font-weight: 700;
+    letter-spacing: .2px;
+    color: var(--text);
+  }
+
+  .profile-hero{
+    padding: 22px 22px 18px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    border-bottom: 1px solid var(--line);
+    background: linear-gradient(180deg, rgba(37,99,235,.06), transparent);
+    border-top-left-radius: var(--radius);
+    border-top-right-radius: var(--radius);
+  }
+
+  .avatar{
+    width: 86px;
+    height: 86px;
+    border-radius: 999px;
+    object-fit: cover;
+    border: 3px solid rgba(37,99,235,.25);
+    box-shadow: 0 8px 18px rgba(37,99,235,.15);
+    background: #fff;
+  }
+
+  .hero-meta .name{
+    margin: 0;
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--text);
+    line-height: 1.15;
+  }
+  .hero-meta .sub{
+    margin: 6px 0 0;
+    color: var(--muted);
+    font-size: 13px;
+  }
+
+  .grid{
+    display: grid;
+    grid-template-columns: 1.35fr 1fr;
+    gap: 18px;
+    padding: 18px;
+  }
+  @media (max-width: 992px){
+    .grid{ grid-template-columns: 1fr; }
+  }
+
+  .section{
+    padding: 16px;
+  }
+  .section-title{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin: 0 0 12px;
+    font-weight: 800;
+    color: var(--text);
+    font-size: 16px;
+  }
+  .hint{
+    color: var(--muted);
+    font-size: 12px;
+  }
+
+  /* table */
+  .table-wrap{
+    overflow: auto;
+    border-radius: 12px;
+    border: 1px solid var(--line);
+  }
+  table.table{
+    margin: 0;
+    background: #fff;
+  }
+  .table thead th{
+    background: #f1f5f9 !important;
+    color: #0f172a;
+    border-bottom: 1px solid var(--line) !important;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .table td, .table th{
+    vertical-align: middle !important;
+  }
+  .table tbody tr:hover{
+    background: #f8fafc;
+  }
+
+  /* badges */
+  .pill{
+    display:inline-flex;
+    align-items:center;
+    gap: 8px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: #fff;
+    color: var(--muted);
+    font-size: 12px;
+  }
+
+  /* actions */
+  .btn-primary{
+    background: var(--primary) !important;
+    border-color: var(--primary) !important;
+  }
+  .btn-primary:hover{
+    background: var(--primary-600) !important;
+    border-color: var(--primary-600) !important;
+  }
+  .btn-soft{
+    background: rgba(37,99,235,.10);
+    border: 1px solid rgba(37,99,235,.25);
+    color: #1d4ed8;
+  }
+  .btn-soft:hover{
+    background: rgba(37,99,235,.16);
+    border-color: rgba(37,99,235,.35);
+    color: #1d4ed8;
+  }
+
+  .copy-area{
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .mono{
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace;
+    font-size: 12.5px;
+    color: #0f172a;
+    background: #f8fafc;
+    border: 1px dashed rgba(15,23,42,.20);
+    padding: 6px 8px;
+    border-radius: 10px;
+    word-break: break-all;
+  }
+
+  /* forms */
+  .form-control{
+    border-radius: 12px !important;
+    border-color: rgba(15,23,42,.15) !important;
+    padding: 10px 12px !important;
+    box-shadow: none !important;
+  }
+  .form-control:focus{
+    border-color: rgba(37,99,235,.55) !important;
+    box-shadow: 0 0 0 .2rem rgba(37,99,235,.15) !important;
+  }
+
+  .form-card{
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 14px;
+    background: #fff;
+  }
+  .form-card + .form-card{ margin-top: 12px; }
+
+  /* toast */
+  .toastx{
+    position: fixed;
+    right: 18px;
+    bottom: 18px;
+    min-width: 240px;
+    max-width: 360px;
+    z-index: 9999;
+    background: rgba(15,23,42,.92);
+    color: #fff;
+    border: 1px solid rgba(255,255,255,.15);
+    backdrop-filter: blur(8px);
+    border-radius: 14px;
+    padding: 10px 12px;
+    box-shadow: 0 18px 40px rgba(2,6,23,.25);
+    display: none;
+  }
+  .toastx.show{ display:block; animation: toastIn .18s ease-out; }
+  @keyframes toastIn{ from{ transform: translateY(8px); opacity:.0 } to{ transform: translateY(0); opacity:1 } }
+  .toastx .title{ font-weight: 800; font-size: 13px; margin:0 0 4px; }
+  .toastx .msg{ font-size: 12.5px; margin:0; color: rgba(255,255,255,.86); }
+</style>
+
+<div class="profile-page">
+  <div class="container profile-wrap">
+    <div class="cardx">
+
+      <div class="profile-hero">
+        <img
+          class="avatar"
+          src="{% if 'qq.com' in user.email %}https://q1.qlogo.cn/g?b=qq&nk={{ user.email.split('@')[0] }}&s=100{% else %}/static/images/1110055.png{% endif %}"
+          alt="用户头像"
+        >
+        <div class="hero-meta">
+          <h1 class="name">
+            {{ user.username }}{% if user.usernick %} <span class="hint">|</span> {{ user.usernick }}{% endif %}
+          </h1>
+          <p class="sub">
+            <span class="pill">邮箱：{{ user.email }}</span>
+            <span class="pill">班级：{{ user.class_name }}</span>
+            <span class="pill">角色：{{ user.role }}</span>
+          </p>
+        </div>
+      </div>
+
+      <div class="grid">
+        <!-- Left: tables -->
+        <div class="section">
+          <div class="section-title">
+            <span>个人信息</span>
+            <span class="hint">信息展示</span>
+          </div>
+
+          <div class="table-wrap">
+            <table class="table table-striped mb-0">
+              <thead>
+                <tr>
+                  <th style="width: 140px;">信息类型</th>
+                  <th>详情</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="text-muted">邮箱</td>
+                  <td>{{ user.email }}</td>
+                </tr>
+                <tr>
+                  <td class="text-muted">班级</td>
+                  <td>{{ user.class_name }}</td>
+                </tr>
+                <tr>
+                  <td class="text-muted">角色</td>
+                  <td>{{ user.role }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div style="height:14px;"></div>
+
+          <div class="section-title">
+            <span>已下载试卷</span>
+            <span class="hint">点击复制题号</span>
+          </div>
+
+          <div class="table-wrap">
+            <table class="table table-striped mb-0">
+              <thead>
+                <tr>
+                  <th style="min-width: 180px;">试卷名称</th>
+                  <th style="min-width: 260px;">试卷题号</th>
+                  <th style="min-width: 180px;">下载时间</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for record in download_records %}
+                <tr>
+                  <td>{{ record.list_name }}</td>
+                  <td>
+                    <div class="copy-area">
+                      <button class="btn btn-sm btn-soft" type="button"
+                              onclick="copyToClipboard('list_value_{{ record.id }}')">
+                        复制
+                      </button>
+                      <span class="mono" id="list_value_{{ record.id }}">{{ record.list_value }}</span>
+                    </div>
+                  </td>
+                  <td class="text-muted">{{ record.last_download_time.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Right: forms -->
+        <div class="section">
+          <div class="section-title">
+            <span>账号安全</span>
+            <span class="hint">修改邮箱 / 密码</span>
+          </div>
+
+          <div class="form-card">
+            <div class="section-title" style="margin-bottom:10px;">
+              <span>更换邮箱</span>
+              <span class="hint">将同步用于登录</span>
+            </div>
+            <form id="change-email-form">
+              <input type="email" id="new-email" name="new_email" class="form-control" placeholder="输入新邮箱" required>
+              <button type="submit" class="btn btn-primary w-100 mt-2">更换邮箱</button>
+            </form>
+          </div>
+
+          <div class="form-card">
+            <div class="section-title" style="margin-bottom:10px;">
+              <span>更换密码</span>
+              <span class="hint">建议使用强密码</span>
+            </div>
+            <form id="change-password-form">
+              <input type="password" id="old-password" name="old_password" class="form-control" placeholder="输入旧密码" required>
+              <input type="password" id="new-password" name="new_password" class="form-control mt-2" placeholder="输入新密码" required>
+              <button type="submit" class="btn btn-primary w-100 mt-2">更换密码</button>
+            </form>
+          </div>
+
+          <p class="hint mt-3 mb-0">
+            提示：复制题号与修改结果会在右下角提示。
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toastx" class="toastx" role="status" aria-live="polite">
+  <p class="title" id="toastx-title">提示</p>
+  <p class="msg" id="toastx-msg"> </p>
+</div>
+
+<script>
+  function showToast(message, title='提示', timeout=2200){
+    const t = document.getElementById('toastx');
+    document.getElementById('toastx-title').innerText = title;
+    document.getElementById('toastx-msg').innerText = message;
+    t.classList.add('show');
+    clearTimeout(window.__toastTimer);
+    window.__toastTimer = setTimeout(()=>t.classList.remove('show'), timeout);
+  }
+
+  async function copyToClipboard(elementId) {
+    const text = document.getElementById(elementId).innerText.trim();
+    try{
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        const textArea = document.createElement("textarea");
+        textArea.value = text;
+        textArea.style.position = "fixed";
+        textArea.style.left = "-9999px";
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+      }
+      showToast('已复制：' + text, '复制成功');
+    }catch(err){
+      console.error('复制失败', err);
+      showToast('复制失败，请手动选择复制', '复制失败', 2600);
+    }
+  }
+
+  document.getElementById('change-password-form').addEventListener('submit', function(event) {
+    event.preventDefault();
+    const oldPassword = document.getElementById('old-password').value;
+    const newPassword = document.getElementById('new-password').value;
+
+    fetch('/change_password', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ old_password: oldPassword, new_password: newPassword }),
+    })
+    .then(r => r.json())
+    .then(data => {
+      showToast(data.message || '请求完成', '密码修改');
+      if (data.message === '密码更换成功') event.target.reset();
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      showToast('网络错误，请稍后重试', '密码修改失败', 2600);
+    });
+  });
+
+  document.getElementById('change-email-form').addEventListener('submit', function(event) {
+    event.preventDefault();
+    const newEmail = document.getElementById('new-email').value;
+
+    fetch('/change_email', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ new_email: newEmail }),
+    })
+    .then(r => r.json())
+    .then(data => {
+      showToast(data.message || '请求完成', '邮箱修改');
+      if (data.message === '邮箱更换成功') event.target.reset();
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      showToast('网络错误，请稍后重试', '邮箱修改失败', 2600);
+    });
+  });
+</script>
+
+{% endblock %}

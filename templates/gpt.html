@@ -1,0 +1,367 @@
+{% extends 'header.html' %}
+
+{% block content %}
+    <!-- 额外样式：统一为 header.html 的冷色调风格 -->
+    <style>
+        /* 页面整体内边距与布局 */
+        .gpt-page-wrapper {
+            padding: 24px 28px 28px 28px;
+        }
+
+        /* 顶部剩余次数提示，右上角悬浮的黄色小标签 */
+        #remaining-count {
+            position: absolute;
+            top: 70px;          /* 考虑导航栏高度 */
+            right: 40px;
+            background-color: #f1c40f;
+            color: #2c3e50;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 13px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+            z-index: 10;
+        }
+
+        /* 头部：头像 + 标题，与整体冷色调搭配 */
+        .header-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 10px;
+        }
+        
+        .header-img {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-right: 16px;
+            border: 2px solid #3498db;
+            box-shadow: 0 2px 8px rgba(52, 152, 219, 0.4);
+        }
+        
+        .header-title {
+            font-size: 32px;
+            font-weight: 700;
+            color: #2c3e50;
+            margin: 0;
+            text-align: center;
+        }
+
+        /* 公告区域：与系统风格统一，淡色卡片 */
+        .announcement {
+            background-color: #ecf7ff;
+            padding: 14px 18px;
+            border: 1px solid #d0e6f8;
+            border-radius: 6px;
+            margin: 16px 0 20px 0;
+            font-size: 14px;
+            color: #34495e;
+        }
+        
+        .announcement ul {
+            margin: 0;
+            padding-left: 18px;
+        }
+        
+        .announcement li {
+            margin-bottom: 6px;
+        }
+        
+        .announcement li:last-child {
+            margin-bottom: 0;
+        }
+
+        /* 聊天盒子区域，使用淡灰背景与圆角 */
+        .chat-box {
+            height: 540px;
+            overflow-y: auto;
+            border-radius: 8px;
+            padding: 16px 18px;
+            margin-bottom: 16px;
+            background-color: #f5f7fa;
+            border: 1px solid #e0e6ed;
+        }
+
+        /* 输入区域: 文本框 + 按钮整体布局 */
+        .input-area {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        #user-input {
+            width: 100%;
+            height: 120px;
+            padding: 10px 12px;
+            border: 1px solid #dce1e6;
+            border-radius: 6px;
+            margin-bottom: 4px;
+            resize: none;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        #user-input:focus {
+            border-color: #3498db;
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.15);
+        }
+
+        #send-button {
+            width: 160px;
+            align-self: flex-end;
+            padding: 8px 16px;
+            background-color: #3498db;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 500;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+        }
+
+        #send-button:hover {
+            background-color: #2980b9;
+            transform: translateY(-1px);
+        }
+
+        /* 消息气泡样式 */
+        .message {
+            margin: 10px 0;
+            padding: 10px 12px;
+            border-radius: 6px;
+            max-width: 80%;
+            clear: both;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        
+        .user-message {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+            float: right;
+            text-align: left;
+            white-space: pre-wrap;
+            border: 1px solid #c8e6c9;
+        }
+        
+        .gpt-message {
+            background-color: #e3f2fd;
+            color: #111;
+            float: left;
+            text-align: left;
+            border: 1px solid #bbdefb;
+        }
+        
+        .chat-box::after {
+            content: "";
+            clear: both;
+            display: table;
+        }
+
+        /* GPT 消息内的 Markdown 内容 */
+        .gpt-message-content {
+            margin-top: 4px;
+            font-size: 15px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .gpt-message-content pre {
+            background: #2d3436;
+            color: #ecf0f1;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 13px;
+        }
+
+        .gpt-message-content code {
+            background: rgba(52, 152, 219, 0.08);
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-size: 13px;
+        }
+
+        .gpt-message-content a {
+            color: #3498db;
+        }
+        .gpt-message-content a:hover {
+            text-decoration: underline;
+        }
+
+        /* 响应式适配 */
+        @media (max-width: 768px) {
+            .gpt-page-wrapper {
+                padding: 16px 14px 18px 14px;
+            }
+
+            #remaining-count {
+                top: 60px;
+                right: 16px;
+                font-size: 12px;
+                padding: 4px 10px;
+            }
+
+            .header-title {
+                font-size: 24px;
+            }
+
+            .chat-box {
+                height: 420px;
+            }
+
+            #send-button {
+                width: 100%;
+            }
+        }
+    </style>
+
+    <!-- markdown-viewer 的 CSS：仍然在 content 中引入即可 -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='markdown-viewer/index.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='markdown-viewer/libs/editormd.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='markdown-viewer/libs/prettify.min.css') }}">
+
+    <!-- MathJax 配置与脚本 -->
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']]
+            },
+            svg: { fontCache: 'global' }
+        };
+    </script>
+    <script src="{{ url_for('static', filename='js/tex-mml-chtml.js') }}"></script>
+
+    <div class="gpt-page-wrapper">
+        <!-- 剩余次数 -->
+        <div id="remaining-count">剩余请求次数：{{ remaining }}</div>
+
+        <!-- 顶部：头像 + 标题 -->
+        <div class="header-container">
+            <img src="https://flying.zj.cn/_uploads/photos/HLDt3r0S0kvO3H1N.png" alt="派森小助手" class="header-img">
+            <h1 class="header-title">派森小助手</h1>
+        </div>
+
+        <!-- 公告区域 -->
+        <div class="announcement">
+            <ul>
+                <li>1. 该 GPT 为 DeepSeek V3 模型，逻辑能力优越、响应较快，请同学们妥善使用，所有问题将被后台记录。</li>
+                <li>2. 考虑成本（约 0.012 元/万字），每位用户每日仅有 5 次提问机会。</li>
+                <li>3. <b>已支持连续对话</b>（为控制成本，每位用户的连续上下文字数不宜超过约 8000 字，超出请刷新页面）。</li>
+            </ul>
+        </div>
+
+        <!-- 对话区域 -->
+        <div class="chat-box" id="chat-box">
+            <!-- 对话内容显示区域 -->
+        </div>
+
+        <!-- 输入 + 发送 -->
+        <div class="input-area">
+            <textarea id="user-input" placeholder="请输入内容...（Alt + Enter 发送，Ctrl + C 复制，Ctrl + V 粘贴）"></textarea>
+            <button id="send-button">发送</button>
+        </div>
+    </div>
+
+    <!-- markdown 渲染相关 JS -->
+    <script src="{{ url_for('static', filename='markdown-viewer/libs/jquery-2.2.1.js') }}"></script>
+    <script src="{{ url_for('static', filename='markdown-viewer/libs/marked.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='markdown-viewer/libs/prettify.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='markdown-viewer/libs/raphael.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='markdown-viewer/libs/underscore.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='markdown-viewer/libs/sequence-diagram.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='markdown-viewer/libs/flowchart.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='markdown-viewer/libs/jquery.flowchart.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='markdown-viewer/libs/editormd.min.js') }}"></script>
+
+    <script>
+        var all_message = '';
+        const MAX_URL_LENGTH = 8000;
+
+        function sendMessageStream() {
+            var user_input = $("#user-input").val().trim();
+            if (!user_input) return;
+
+            // 更新 all_message
+            all_message += '用户：' + user_input + '\n';
+
+            // 长度检查
+            if (encodeURIComponent(all_message).length > MAX_URL_LENGTH) {
+                $("#chat-box").append(
+                    `<div class="message gpt-message"><div class="gpt-message-content">当前对话内容过长，请刷新页面重新开始对话。</div></div>`
+                );
+                $("#chat-box").scrollTop($("#chat-box")[0].scrollHeight);
+                return;
+            }
+
+            // 显示用户消息
+            $("#chat-box").append(
+                `<div class="message user-message">${escapeHtml(user_input)}</div>`
+            );
+            MathJax.typeset();
+            $("#user-input").val('');
+            $("#chat-box").scrollTop($("#chat-box")[0].scrollHeight);
+
+            var streamUrl = "/send_stream?user_input=" + encodeURIComponent(all_message);
+            var source = new EventSource(streamUrl);
+
+            // GPT 消息容器
+            let gptMessageDiv = document.createElement("div");
+            gptMessageDiv.className = "message gpt-message";
+            let gptContentDiv = document.createElement("div");
+            gptContentDiv.className = "gpt-message-content";
+            gptMessageDiv.appendChild(gptContentDiv);
+            document.getElementById("chat-box").appendChild(gptMessageDiv);
+
+            let accumulatedText = "";
+
+            source.onmessage = function(event) {
+                if (event.data.startsWith('剩余次数:')) {
+                    const remainingCount = event.data.replace('剩余次数: ', '');
+                    document.getElementById('remaining-count').innerText = "剩余请求次数：" + remainingCount;
+                } else {
+                    let chunkText = event.data.replace(/\\n/g, "\n");
+                    accumulatedText += chunkText;
+                    let renderedHtml = marked.parse(accumulatedText);
+                    gptContentDiv.innerHTML = renderedHtml;
+                    $("#chat-box").scrollTop($("#chat-box")[0].scrollHeight);
+                }
+            };
+
+            source.onerror = function(event) {
+                console.log("SSE 连接已关闭。");
+                MathJax.typesetPromise([gptContentDiv]).then(() => {
+                    console.log("LaTeX 渲染完成");
+                }).catch((err) => {
+                    console.error("LaTeX 渲染失败:", err);
+                });
+                all_message += 'GPT：' + accumulatedText + '\n';
+                source.close();
+            };
+        }
+
+        $(document).ready(function() {
+            $("#send-button").click(sendMessageStream);
+            $(document).keydown(function(event) {
+                if (event.altKey && event.key === "Enter") {
+                    event.preventDefault();
+                    sendMessageStream();
+                }
+            });
+        });
+
+        function escapeHtml(text) {
+            return text
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+    </script>
+{% endblock %}

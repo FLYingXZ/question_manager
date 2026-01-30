@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <title>{{ exam.name }} - 考试中</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/5.2.3/bootstrap.min.css') }}">
+    <script src="{{ url_for('static', filename='jquery/jquery-3.6.0.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/5.2.3/bootstrap.bundle.min.js') }}"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='syzoj/css/semantic.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='syzoj/css/style.css') }}">
+
+    <style>
+        body {
+            background-color: #f5f7fa;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            padding-top: 20px;
+            padding-bottom: 40px;
+        }
+        .exam-container {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+            margin: 0 auto;
+            max-width: 1200px;
+            padding: 20px;
+            position: relative;
+            min-height: 700px;
+        }
+        .exam-header {
+            text-align: center;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eaeaea;
+            margin-bottom: 30px;
+        }
+        .exam-title {
+            color: #2c3e50;
+            font-weight: 600;
+            margin: 0;
+        }
+        .question-number-display {
+            position: fixed;
+            left: 20px;
+            top: 20px;
+            background: #3498db;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 16px;
+            z-index: 1000;
+            box-shadow: 0 2px 8px rgba(52, 152, 219, 0.2);
+        }
+        .timer-display {
+            position: fixed;
+            right: 20px;
+            top: 20px;
+            background: #e74c3c;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 16px;
+            z-index: 1000;
+            box-shadow: 0 2px 8px rgba(231, 76, 60, 0.2);
+        }
+        .control-panel {
+            position: fixed;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            width: 200px;
+            z-index: 999;
+            border: 1px solid #eaeaea;
+            transition: opacity 0.3s ease;
+        }
+        .control-btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 4px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        .control-btn:hover {
+            background: #2980b9;
+            transform: translateY(-1px);
+        }
+        .control-btn:active { transform: translateY(0); }
+
+        .font-control {
+            background: #f8f9fa;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+        .font-control label {
+            display: block;
+            margin-bottom: 8px;
+            color: #2c3e50;
+            font-weight: 500;
+        }
+        #fontSizeRange { width: 100%; margin: 10px 0; }
+        .font-preview {
+            text-align: center;
+            font-size: 14px;
+            color: #7f8c8d;
+        }
+
+        .question-content-area {
+            margin-right: 240px;
+            min-height: 500px;
+        }
+        .question {
+            margin-bottom: 30px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 25px;
+            border: 1px solid #eaeaea;
+        }
+        .question-header {
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eaeaea;
+        }
+        .question-title {
+            color: #2c3e50;
+            font-weight: 600;
+            margin: 0;
+        }
+        .question-body {
+            font-size: 16px;
+            line-height: 1.6;
+            color: #34495e;
+        }
+
+        .answer-options { margin-top: 25px; }
+        .subquestion-label {
+            font-weight: bold;
+            color: #2c3e50;
+            margin: 20px 0 10px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #eaeaea;
+        }
+        .option-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 15px 0;
+        }
+        .option-item {
+            background: white;
+            border: 2px solid #dce1e6;
+            border-radius: 6px;
+            padding: 12px 15px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+        }
+        .option-item:hover {
+            border-color: #3498db;
+            background: #f0f8ff;
+        }
+        .option-item.selected {
+            border-color: #3498db;
+            background: #ebf5fb;
+        }
+        .form-check-input { margin-right: 10px; }
+
+        .comprehensive-answer { margin-top: 20px; }
+        .comprehensive-answer textarea {
+            width: 100%;
+            padding: 15px;
+            border: 1px solid #dce1e6;
+            border-radius: 6px;
+            font-size: 16px;
+            line-height: 1.5;
+            resize: vertical;
+            min-height: 150px;
+        }
+        .comprehensive-answer textarea:focus {
+            border-color: #3498db;
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+        }
+
+        #cheerAnimation {
+            position: fixed;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1001;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            display: none;
+        }
+        #cheerAnimation img {
+            max-width: 180px;
+            height: auto;
+            border-radius: 5px;
+        }
+
+        @media (max-width: 1200px) {
+            .question-content-area { margin-right: 220px; }
+            .control-panel { width: 180px; }
+        }
+        @media (max-width: 992px) {
+            .question-content-area { margin-right: 0; margin-top: 200px; }
+            .control-panel {
+                top: 120px;
+                left: 50%;
+                transform: translateX(-50%);
+                width: 90%;
+                max-width: 500px;
+            }
+            .question-number-display, .timer-display {
+                position: static;
+                display: inline-block;
+                margin: 10px;
+            }
+        }
+
+        .question:not([style*="display: none"]) {
+            box-shadow: 0 0 0 2px #3498db;
+            animation: questionFocus 0.5s ease;
+        }
+        @keyframes questionFocus {
+            0% { box-shadow: 0 0 0 0 rgba(52, 152, 219, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(52, 152, 219, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(52, 152, 219, 0); }
+        }
+
+        .inline-option { cursor: pointer; transition: background-color 0.15s ease; }
+        .inline-option:hover { background-color: #f0f8ff; }
+    </style>
+</head>
+
+<body>
+    <div class="question-number-display" id="currentQuestion"></div>
+    <div class="timer-display" id="timer"></div>
+
+    <div class="control-panel">
+        <h5 style="text-align: center; color: #2c3e50; margin-bottom: 20px;">考试控制</h5>
+
+        <div class="font-control">
+            <label>字体大小调整</label>
+            <input type="range" id="fontSizeRange" min="14" max="24" value="16" step="1">
+            <div class="font-preview" id="fontPreview">预览文字</div>
+        </div>
+
+        <button type="button" class="control-btn" id="prevBtn">
+            上一题（键盘P）
+        </button>
+        <button type="button" class="control-btn" id="nextBtn">
+            下一题（键盘N）
+        </button>
+
+        <button type="button" class="control-btn" id="submitBtn" style="background: #e74c3c;">
+            提交试卷
+        </button>
+    </div>
+
+    <div id="cheerAnimation" style="display: none;">
+        <img id="cheerGif" src="" alt="加油">
+    </div>
+
+    <div class="container">
+        <div class="exam-container">
+            <div class="exam-header">
+                <h2 class="exam-title">{{ exam.name }}</h2>
+                <p style="color: #7f8c8d; margin-top: 10px;">请认真答题，祝您考试顺利！</p>
+            </div>
+
+            <div class="question-content-area">
+                <form id="examForm">
+                    {% for question in questions %}
+                    <div class="question" id="question_{{ question.id }}" style="display: none;"
+                         data-qtype="{{ question.qtype }}" data-question-id="{{ question.id }}">
+
+                        <div class="question-header">
+                            <h5 class="question-title">
+                                {% if question.qtype == 1 %}
+                                    单选题
+                                {% elif question.qtype == 2 %}
+                                    多选题
+                                {% else %}
+                                    综合题
+                                {% endif %}
+                            </h5>
+                        </div>
+
+                        <div class="question-body" id="content_{{ question.id }}">
+                            {{ question.content | safe }}
+                        </div>
+
+                        {% if question.qtype == 3 %}
+                            <div class="comprehensive-answer">
+                                <textarea class="form-control" name="answer_{{ question.id }}"
+                                          placeholder="请在此输入您的答案..." rows="6"></textarea>
+                            </div>
+                        {% else %}
+                            <div class="answer-options">
+                                {% set num_subquestions = question.answer.split(' ') | length %}
+                                {% for i in range(num_subquestions if num_subquestions > 1 else 1) %}
+                                    {% if num_subquestions > 1 %}
+                                        <div class="subquestion-label">小题 {{ i + 1 }}</div>
+                                    {% endif %}
+
+                                    <div class="option-group">
+                                        {% set sub_answer = question.answer.split(' ')[i] if num_subquestions > 1 else question.answer %}
+                                        {% if sub_answer | length > 1 %}
+                                            {% for option in ['A', 'B', 'C', 'D', 'E'] %}
+                                                <label class="option-item" onclick="selectOption(this, 'checkbox')">
+                                                    <input class="form-check-input" type="checkbox"
+                                                           name="answer_{{ question.id }}{% if num_subquestions > 1 %}_{{ i }}{% endif %}"
+                                                           value="{{ option }}">
+                                                    <span style="font-weight: 500;">{{ option }}</span>
+                                                </label>
+                                            {% endfor %}
+                                        {% else %}
+                                            {% for option in ['A', 'B', 'C', 'D', 'E'] %}
+                                                <label class="option-item" onclick="selectOption(this, 'radio')">
+                                                    <input class="form-check-input" type="radio"
+                                                           name="answer_{{ question.id }}{% if num_subquestions > 1 %}_{{ i }}{% endif %}"
+                                                           value="{{ option }}">
+                                                    <span style="font-weight: 500;">{{ option }}</span>
+                                                </label>
+                                            {% endfor %}
+                                        {% endif %}
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            // 拆分后：仅在“未提交/未跳转”时才拦截离开
+            let allowLeaveWithoutPrompt = false;
+
+            $(window).on('beforeunload', function() {
+                if (!allowLeaveWithoutPrompt) {
+                    return "您确定要离开此页面吗？考试数据将不会被保存。";
+                }
+            });
+
+            // === 题干内选项解析（你原来的逻辑保留）===
+            function parseOptionsFromBlocksDeep(container) {
+                const blockTags = ['DIV', 'P', 'LI'];
+                const blocks = [];
+
+                function dfs(node) {
+                    if (node.nodeType === Node.ELEMENT_NODE) {
+                        if (blockTags.includes(node.tagName)) {
+                            blocks.push(node);
+                        }
+                        node.childNodes.forEach(dfs);
+                    }
+                }
+                dfs(container);
+
+                const optionPattern = /^([A-Z])[\.\、]\s*(.*)$/i;
+                const optionHeads = [];
+
+                blocks.forEach((el, idx) => {
+                    const text = el.textContent.replace(/\u00A0/g, ' ').trim();
+                    const m = text.match(optionPattern);
+                    if (m) {
+                        const label = m[1].toUpperCase();
+                        optionHeads.push({ idx, el, label });
+                    }
+                });
+
+                if (optionHeads.length === 0) return null;
+
+                const finalHeads = [];
+                for (let i = 0; i < optionHeads.length; i++) {
+                    if (optionHeads[i].label !== 'A') continue;
+
+                    const group = [optionHeads[i]];
+                    let lastCode = 'A'.charCodeAt(0);
+
+                    for (let j = i + 1; j < optionHeads.length; j++) {
+                        const expected = String.fromCharCode(lastCode + 1);
+                        if (optionHeads[j].label === expected) {
+                            group.push(optionHeads[j]);
+                            lastCode = optionHeads[j].label.charCodeAt(0);
+                        } else {
+                            break;
+                        }
+                    }
+
+                    if (group.length >= 2) {
+                        finalHeads.push(...group);
+                        break;
+                    }
+                }
+
+                if (finalHeads.length < 2) return null;
+                return { heads: finalHeads };
+            }
+
+            function parseOptionsFromBr(container) {
+                const html = container.innerHTML;
+                const parts = html.split(/<br\s*\/?>/i);
+                const optionPattern = /^([A-Z])[\.\、]\s*(.+)$/i;
+                const options = [];
+
+                parts.forEach((raw, idx) => {
+                    const text = raw.replace(/&nbsp;/g, ' ').trim();
+                    const m = text.match(optionPattern);
+                    if (m) {
+                        const label = m[1].toUpperCase();
+                        const content = m[2].trim();
+                        if (!content) return;
+
+                        if (options.length === 0 && label === 'A') {
+                            options.push({ label, content, idx });
+                        } else if (options.length > 0) {
+                            const expectedCode = options[options.length - 1].label.charCodeAt(0) + 1;
+                            const expected = String.fromCharCode(expectedCode);
+                            if (label === expected) {
+                                options.push({ label, content, idx });
+                            }
+                        }
+                    }
+                });
+
+                if (options.length >= 2 && options[0].label === 'A') {
+                    return { options, lines: parts };
+                } else {
+                    return null;
+                }
+            }
+
+            function initInlineOptions() {
+                $('.question').each(function() {
+                    const qtype = $(this).data('qtype');
+                    if (qtype == 3) return;
+                    const body = $(this).find('.question-body')[0];
+                    if (!body) return;
+
+                    const blockResult = parseOptionsFromBlocksDeep(body);
+                    if (blockResult && blockResult.heads.length >= 2) {
+                        blockResult.heads.forEach(headInfo => {
+                            const el = headInfo.el;
+                            if (el.querySelector('.inline-option')) return;
+
+                            const originalHTML = el.innerHTML;
+                            const stripped = originalHTML.replace(/^\s*([A-Za-z])[\.\、]\s*/, '');
+                            const label = headInfo.label;
+                            el.innerHTML = `<span class="inline-option" data-option="${label}">${label}. ${stripped}</span>`;
+                        });
+                        return;
+                    }
+
+                    const brResult = parseOptionsFromBr(body);
+                    if (brResult && brResult.options.length >= 2) {
+                        const parts = brResult.lines.slice();
+                        brResult.options.forEach(opt => {
+                            const raw = parts[opt.idx];
+                            const stripped = raw.replace(/^\s*[A-Za-z][\.\、]\s*/, '');
+                            parts[opt.idx] =
+                                `<span class="inline-option" data-option="${opt.label}">${opt.label}. ${stripped}</span>`;
+                        });
+                        body.innerHTML = parts.join('<br>');
+                    }
+                });
+            }
+
+            $(document).on('click', '.inline-option', function() {
+                const opt = $(this).data('option');
+                const questionDiv = $(this).closest('.question');
+                const qtype = questionDiv.data('qtype');
+                const inputType = (qtype == 2) ? 'checkbox' : 'radio';
+
+                const group = questionDiv.find('.option-group').first();
+                if (!group.length) return;
+
+                const targetLabel = group.find(`.option-item input[value="${opt}"]`).closest('.option-item');
+                if (targetLabel.length) {
+                    selectOption(targetLabel[0], inputType);
+                }
+            });
+
+            // === 基础状态 ===
+            var currentQuestion = 0;
+            var questions = $('.question');
+            var totalQuestions = questions.length;
+            var duration = {{ remaining_time }};
+            var timerInterval;
+            var currentFontSize = 16;
+
+            initInlineOptions();
+
+            showQuestion(currentQuestion);
+            updateTimerDisplay();
+            timerInterval = setInterval(updateTimer, 1000);
+            $('#currentQuestion').text('题目: ' + (currentQuestion + 1) + '/' + totalQuestions);
+
+            function showQuestion(index) {
+                questions.hide();
+                $(questions[index]).show();
+                $('#currentQuestion').text('题目: ' + (index + 1) + '/' + totalQuestions);
+                applyFontSize();
+            }
+
+            function updateTimer() {
+                var minutes = Math.floor(duration / 60);
+                var seconds = Math.floor(duration % 60);
+                $('#timer').text('剩余时间: ' + minutes + '分' + seconds + '秒');
+
+                if (duration <= 0) {
+                    clearInterval(timerInterval);
+                    autoSubmit();
+                } else {
+                    duration--;
+                }
+            }
+
+            function updateTimerDisplay() {
+                var minutes = Math.floor(duration / 60);
+                var seconds = Math.floor(duration % 60);
+                $('#timer').text('剩余时间: ' + minutes + '分' + seconds + '秒');
+            }
+
+            function autoSubmit() {
+                alert('考试时间已到，正在自动提交试卷...');
+                submitExam();
+            }
+
+            $('#prevBtn').click(function() {
+                if (currentQuestion > 0) {
+                    currentQuestion--;
+                    showQuestion(currentQuestion);
+                }
+            });
+
+            $('#nextBtn').click(function() {
+                if (currentQuestion < totalQuestions - 1) {
+                    currentQuestion++;
+                    showQuestion(currentQuestion);
+                }
+            });
+
+            $('#submitBtn').click(function() {
+                if (confirm('确定要提交试卷吗？提交后无法修改！')) {
+                    submitExam();
+                }
+            });
+
+            function submitExam() {
+                clearInterval(timerInterval);
+
+                var answers = {};
+                var allAnswered = true;
+                var unansweredQuestions = [];
+
+                $('.question').each(function() {
+                    var questionId = $(this).data('question-id');
+                    var qtype = $(this).data('qtype');
+
+                    if (qtype == 3) {
+                        var answer = $('textarea[name="answer_' + questionId + '"]').val().trim();
+                        if (answer === '') {
+                            allAnswered = false;
+                            unansweredQuestions.push(questionId);
+                        }
+                        answers[questionId] = answer;
+                    } else {
+                        var answerInputs = $('input[name^="answer_' + questionId + '_"]:checked, input[name="answer_' + questionId + '"]:checked');
+                        if (answerInputs.length === 0) {
+                            allAnswered = false;
+                            unansweredQuestions.push(questionId);
+                        }
+
+                        var subAnswers = {};
+                        answerInputs.each(function() {
+                            var name = $(this).attr('name');
+                            var value = $(this).val();
+                            var subId = name.split('_').length > 2 ? name.split('_')[2] : '0';
+
+                            if (!subAnswers[subId]) {
+                                subAnswers[subId] = [];
+                            }
+                            subAnswers[subId].push(value);
+                        });
+
+                        var finalAnswer = [];
+                        Object.keys(subAnswers).sort().forEach(function(subId) {
+                            var subAnswer = subAnswers[subId];
+                            if (subAnswer.length > 1) {
+                                finalAnswer.push(subAnswer.sort().join(''));
+                            } else {
+                                finalAnswer.push(subAnswer[0]);
+                            }
+                        });
+
+                        answers[questionId] = finalAnswer.join(' ');
+                    }
+                });
+
+                if (!allAnswered) {
+                    var confirmSubmit = confirm('还有' + unansweredQuestions.length + '道题目未回答，确定要提交吗？');
+                    if (!confirmSubmit) {
+                        // 这里仍然保持你原来的写法（有 ID 映射风险），如需我也可以一起修
+                        showQuestion(unansweredQuestions[0] - 1);
+                        return;
+                    }
+                }
+
+                // 允许跳转结果页时不再弹离开提示
+                allowLeaveWithoutPrompt = true;
+
+                $.ajax({
+                    url: '/submit_exam',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        exam_id: {{ exam.id }},
+                        answers: answers
+                    }),
+                    success: function(response) {
+                        // 拆分后：提交成功直接跳转到结果页
+                        if (response.redirect_url) {
+                            window.location.href = response.redirect_url;
+                        } else {
+                            alert('提交成功，但未返回结果跳转地址。');
+                        }
+                    },
+                    error: function(xhr) {
+                        allowLeaveWithoutPrompt = false; // 提交失败继续拦截
+                        alert('提交失败: ' + (xhr.responseJSON ? xhr.responseJSON.error : '网络错误'));
+                        // 提交失败时可以考虑恢复计时器（这里不自动恢复，避免重复计时引发混乱）
+                    }
+                });
+            }
+
+            $('#fontSizeRange').on('input', function() {
+                currentFontSize = $(this).val();
+                applyFontSize();
+                $('#fontPreview').css('font-size', currentFontSize + 'px');
+            });
+
+            function applyFontSize() {
+                $('.question-body').css('font-size', currentFontSize + 'px');
+            }
+
+            function showCheerAnimation() {
+                var randomNumber = Math.random();
+                if (randomNumber < 0.1) {
+                    var gifUrl = "https://flying.zj.cn/_uploads/photos/ApHpCbnEfqLm6ilw.gif";
+                    $('#cheerGif').attr('src', gifUrl);
+                    $('#cheerAnimation').fadeIn();
+                    setTimeout(function() { $('#cheerAnimation').fadeOut(); }, 2000);
+                }
+            }
+
+            window.selectOption = function(element, type) {
+                var input = $(element).find('input');
+
+                if (type === 'radio') {
+                    $(element).closest('.option-group').find('.option-item').removeClass('selected');
+                    $(element).addClass('selected');
+                    input.prop('checked', true);
+                } else if (type === 'checkbox') {
+                    $(element).toggleClass('selected');
+                    input.prop('checked', !input.prop('checked'));
+                }
+
+                setTimeout(showCheerAnimation, 200);
+            };
+
+            $('#fontPreview').css('font-size', currentFontSize + 'px');
+
+            $(document).on('keydown', function(e) {
+                const active = document.activeElement;
+                if (active && (
+                        active.tagName === 'TEXTAREA' ||
+                        (active.tagName === 'INPUT' && active.type && active.type !== 'radio' && active.type !== 'checkbox' && active.type !== 'button')
+                    )) {
+                    return;
+                }
+
+                const key = e.key.toUpperCase();
+
+                if (key === 'P') {
+                    e.preventDefault();
+                    if (currentQuestion > 0) {
+                        currentQuestion--;
+                        showQuestion(currentQuestion);
+                    }
+                } else if (key === 'N') {
+                    e.preventDefault();
+                    if (currentQuestion < totalQuestions - 1) {
+                        currentQuestion++;
+                        showQuestion(currentQuestion);
+                    }
+                } else if (key >= '1' && key <= '9') {
+                    e.preventDefault();
+                    const num = parseInt(key);
+                    if (num <= totalQuestions) {
+                        currentQuestion = num - 1;
+                        showQuestion(currentQuestion);
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>

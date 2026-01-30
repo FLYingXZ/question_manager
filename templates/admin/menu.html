@@ -1,0 +1,113 @@
+
+<!DOCTYPE html>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/menu/hoj.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/menu/bootstrap.min.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/menu/style.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/menu/tomorrow.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/menu/semantic.min.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/menu/katex.min.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/menu/morris.min.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/menu/FiraMono.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/menu/latin.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/menu/Exo.css') }}">
+
+<iframe src="session.php" height=0px width=0px ></iframe>
+<html>
+    <head>
+    <title>管理</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/menu/bootstrap-theme.min.css') }}">
+    <script src="{{ url_for('static', filename='js/menu/jquery.min.js') }}"></script>
+    <!-- 最新的 Bootstrap 核心 JavaScript 文件 -->
+    <script src="{{ url_for('static', filename='js/menu/bootstrap.min.js') }}"></script>
+</head>
+
+<body>
+<hr>
+<a class='btn btn-block btn-sm' href="help.php" target="main" title="管理"><b>管理</b></a>
+<hr>
+
+<a class='btn btn-block btn-sm' href="../status.php" target="_top" title="跳转回到前台"><b>查看前台</b></a><br>
+
+<center>
+<div class="btn-group-vertical">
+
+  <div class="btn-group">
+    <button type="button" class="btn btn-secondary dropdown-toggle btn-sm" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+      公告-管理 <span class="caret"></span>
+    </button>
+    <div class="dropdown-menu">
+            <a class="dropdown-item btn-sm" href="#" onclick="event.preventDefault();" title="管理已经发布的新闻"><b>公告-列表</b></a>
+      <a class="dropdown-item btn-sm" href="news_add_page.php" target="main" title="添加首页显示的新闻"><b>公告-添加</b></a>
+    </div>
+  </div>
+  <div class="btn-group">
+    <button type="button" class="btn btn-secondary dropdown-toggle btn-sm" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+      用户-管理 <span class="caret"></span>
+    </button>
+    <div class="dropdown-menu">
+      <a class="dropdown-item btn-sm" href="user_list.php" target="main" title="对注册用户停用、启用帐号"><b>用户-列表</b></a>
+      <a class="dropdown-item btn-sm" href="user_add.php" target="main" title="添加用户"><b>用户-添加</b></a>
+      <a class="dropdown-item btn-sm" href="user_import.php" target="main" title="导入用户"><b>用户-导入</b></a>
+
+      <a class="dropdown-item btn-sm" href="changepass.php" target="main" title="重设指定用户的密码，对于管理员帐号需要先降级为普通用户才能修改。"><b>用户-修改密码</b></a>
+      <a class="dropdown-item btn-sm" href="privilege_list.php" target="main" title="查看已有的特殊权限列表、进行删除操作。"><b>用户-权限-列表</b></a>
+      <a class="dropdown-item btn-sm" href="privilege_add.php" target="main" title="给指定用户增加权限，包括管理员、题目添加者、比赛组织者、比赛参加者、代码查看者、手动判题、远程判题、打印员、气球发放员等权限。"><b>用户-权限-添加</b></a>
+    </div>
+  </div>
+
+  <div class="btn-group">
+    <button type="button" class="btn btn-secondary dropdown-toggle btn-sm" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+      问题-管理 <span class="caret"></span>
+    </button>
+    <div class="dropdown-menu">
+      <a class="dropdown-item btn-sm" href="problem_list.php" target="main" title="管理已有的题目和数据，上传数据可以用zip压缩不含目录的数据。"><b>问题-列表</b></a>
+      <a class="dropdown-item btn-sm" href="problem_add_page.php" target="main" title="手动添加新的题目，多组测试数据在添加后从题目列表TestData按钮进入上传，新建题目<b>默认隐藏</b>，需在问题列表中点击红色<font color='red'></font>切换为绿色<font color='green'>Available</font>启用。。"><b>问题-添加</b></a>
+      <a class="dropdown-item btn-sm" href="problem_import.php" target="main" title="导入从官方群共享或tk.hustoj.com下载到的fps.xml文件。"><b>问题-导入</b></a>
+      <a class="dropdown-item btn-sm" href="problem_export.php" target="main" title="将系统中的题目以fps.xml文件的形式导出。"><b>问题-导出</b></a>
+    </div>
+  </div>
+
+
+  <div class="btn-group">
+    <button type="button" class="btn btn-secondary dropdown-toggle btn-sm" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+      竞赛&作业-管理 <span class="caret"></span>
+    </button>
+    <div class="dropdown-menu">
+      <a class="dropdown-item btn-sm" href="contest_list.php" target="main"  title="已有的比赛列表，修改时间和公开/私有，尽量不要在开赛后调整题目列表。"><b>竞赛&作业-列表</b></a>
+      <a class="dropdown-item btn-sm" href="contest_add.php" target="main"  title="规划新的比赛，用逗号分隔题号。可以设定私有比赛，用密码或名单限制参与者。"><b>竞赛&作业-添加</b></a>
+      <a class="dropdown-item btn-sm" href="user_set_ip.php" target="main" title="记录考试期间的计算机(登录IP)更改。"><b>竞赛&作业-指定登录IP</b></a>
+      <a class="dropdown-item btn-sm" href="team_generate.php" target="main" title="批量生成大量比赛帐号、密码，用于来自不同学校的参赛者。小系统不要随便使用，可能产生垃圾帐号，无法删除。"><b>竞赛&作业-比赛队帐号生成器</b></a>
+      <a class="dropdown-item btn-sm" href="team_generate2.php" target="main" title="批量生成大量比赛帐号、密码，用于来自不同学校的参赛者。小系统不要随便使用，可能产生垃圾帐号，无法删除。"><b>竞赛&作业-比赛队帐号生成器</b></a>
+    </div>
+  </div>
+
+  <div class="btn-group">
+    <button type="button" class="btn btn-secondary dropdown-toggle btn-sm" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+      系统-管理 <span class="caret"></span>
+    </button>
+    <div class="dropdown-menu">
+      <a class="dropdown-item btn-sm" href="rejudge.php" target="main" title="重判指定的题目、提交或比赛。"><b>系统-重判题目</b></a>      
+      <a class="dropdown-item btn-sm" href="source_give.php" target="main" title="将导入系统的标程赠与指定帐号，用于训练后辅助未通过的人学习参考。"><b>系统-转移源码</b></a>
+      <a class="dropdown-item btn-sm" href="../online.php" target="main"><b>系统-查看在线用户</b></a>      
+      <a class="dropdown-item btn-sm" href="update_db.php" target="main" title="更新数据库结构，在每次升级（sudo update-hustoj）之后或者导入老系统数据库备份，应至少操作一次。"><b>系统-更新数据库</b></a>
+      <a class="dropdown-item btn-sm" href="backup.php" target="main" title="备份数据库,测试数据和图片到0题目录"><b>系统-备份数据库</b></a>
+      <a class="dropdown-item btn-sm" href="ranklist_export.php" target="main" title="导出排名"><b>导出排名</b></a>
+    
+    </div>
+  </div>
+
+</div>
+</center>
+
+  <br><a class='btn btn-block btn-sm' href="https://github.com/zhblue/hustoj/" target="_blank"><b>HUSTOJ</b></a>
+  <br><center><a class="btn btn-sm" target='main' href="http://hustoj.com">管理 常见问答</a></center>
+  <br><a class='btn btn-block btn-sm' href="https://github.com/zhblue/freeproblemset/" target="_blank"><b>FreeProblemSet</b></a>
+  <br><a class='btn btn-block btn-sm' href="http://tk.hustoj.com" target="_blank"><b>自助题库</b></a>
+  <br><a class='btn btn-block btn-sm' href="http://shang.qq.com/wpa/qunwpa?idkey=d52c3b12ddaffb43420d308d39118fafe5313e271769277a5ac49a6fae63cf7a" target="_blank">手机QQ加官方<br>群23361372</a>
+
+  <a href="solution_statistics.php" target="main" title="Create your own data"><font color="eeeeee">SS Report</font></a> <br>
+  <a href="problem_copy.php" target="main" title="Create your own data"><font color="eeeeee">CopyProblem</font></a> <br>
+  <a href="problem_changeid.php" target="main" title="Danger,Use it on your own risk"><font color="eeeeee">ReOrderProblem</font></a>
+</body>
+</html>

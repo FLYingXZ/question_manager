@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Register</title>
+    <link rel="icon" href="/static/favicon.ico" type="image/x-icon">
+    <style>
+        .page {
+            font-family: 'Arial', sans-serif;
+            color: #fff;
+            /* 亮文本色 */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 80vh;
+            margin: 0;
+        }
+
+        .back-button {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            padding: 5px 10px;
+            background-color: #888;
+            /* 按钮背景颜色 */
+            color: white;
+            /* 按钮文本颜色 */
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            text-decoration: none;
+            /* 移除链接下划线 */
+            font-size: 16px;
+            /* 设置箭头大小 */
+        }
+
+        .back-button:hover {
+            background-color: #666;
+            /* 按钮悬浮颜色 */
+        }
+
+        .back-button:before {
+            content: "←";
+            /* 创建左箭头形状 */
+            display: inline-block;
+        }
+
+        .auth-form {
+            min-height: 400px;
+            position: relative;
+            /* 使返回按钮相对于表单定位 */
+            background-color: #444;
+            /* 深灰背景色 */
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            width: 320px;
+            /* 设置表单宽度 */
+        }
+
+        .auth-form input[type="text"],
+        .auth-form input[type="password"],
+        .auth-form input[type="email"] {
+            width: calc(100%);
+            padding: 12px;
+            margin-top: 10px;
+            margin-bottom: 20px;
+            /* 增加底部间距 */
+            display: block;
+            border: 1px solid #555;
+            /* 暗边框颜色 */
+            background-color: #555;
+            /* 输入框背景颜色 */
+            color: #ddd;
+            /* 输入文本颜色 */
+            border-radius: 5px;
+            box-sizing: border-box;
+            transition: border-color 0.3s;
+        }
+
+        .auth-form input[type="text"]:focus,
+        .auth-form input[type="password"]:focus,
+        .auth-form input[type="email"]:focus {
+            border-color: #777;
+            /* 聚焦时边框颜色 */
+        }
+
+        .auth-form button {
+            width: 100%;
+            background-color: #5cb85c;
+            /* 按钮颜色 */
+            color: white;
+            padding: 14px 20px;
+            margin-top: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .auth-form button:hover {
+            background-color: #4cae4c;
+            /* 按钮悬浮颜色 */
+        }
+
+        .error-message {
+            color: red;
+            /* 错误信息的颜色 */
+            margin-top: 20px;
+            display: none;
+            /* 默认隐藏 */
+        }
+    </style>
+</head>
+
+<body>
+    <div class="page">
+        <form id="registerForm" class="auth-form">
+            <div class="back-button" onclick="window.location.href='login'"></div>
+            用户名: <input type="text" name="username"><br>
+            昵称: <input type="text" name="usernick"><br>
+            邮箱: <input type="email" name="email"><br>
+            密码: <input type="password" name="password"><br>
+            班级（默认为“其他”）: <input type="text" name="class_name"><br>
+            <button type="submit">确定</button>
+            <p>提升权限可联系管理员</p>
+            <div class="error-message" id="errorMessage"></div>
+        </form>
+    </div>
+    <footer style="text-align: center;">
+        <a href="https://beian.miit.gov.cn/">浙ICP备2021039264号-2</a>
+    </footer>
+    <script>
+        document.getElementById('registerForm').onsubmit = async function(e) {
+            e.preventDefault();
+
+            // 获取表单数据
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData.entries());
+
+            // 检查所有字段是否已填写
+            if (!data.username || !data.usernick || !data.email || !data.password) {
+                alert('所有字段都必须填写。');
+                return; // 阻止表单提交
+            }
+
+            // 提交表单
+            const response = await fetch('/register', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data),
+            });
+
+            const result = await response.json();
+            const errorMessageElement = document.getElementById('errorMessage');
+
+            if (response.ok) {
+                alert(result.message);
+                if (result.redirect) {
+                    window.location.href = result.redirect;
+                }
+            } else {
+                errorMessageElement.textContent = result.error || result.message || '注册失败';
+                errorMessageElement.style.display = 'block'; // 显示错误信息
+            }
+        }
+    </script>
+</body>
+
+</html>

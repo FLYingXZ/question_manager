@@ -1,0 +1,43 @@
+{% extends "header.html" %}
+{% block content %}
+
+<head>
+    <meta charset="UTF-8">
+    <title>博客管理</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/5.2.3/bootstrap.min.css') }}">
+</head>
+
+<div class="container mt-4">
+    <h1 class="text-center mb-4">我的博客</h1>
+    <div class="text-right mb-4">
+        <a href="{{ url_for('new_blog') }}" class="btn btn-primary btn-lg">新增博客</a>
+    </div>
+    <ul class="list-group">
+        {% for blog in blogs %}
+        <li class="list-group-item">
+            <h5>{{ blog.title }}</h5>
+            <p class="text-muted">{{ blog.create_time }}</p>
+            <div class="d-flex justify-content-between align-items-center">
+                <a href="{{ url_for('edit_blog', blog_id=blog.id) }}" class="btn btn-secondary btn-sm">编辑</a>
+                <form action="{{ url_for('delete_blog', blog_id=blog.id) }}" method="post" style="display: inline;">
+                    <button type="submit" class="btn btn-danger btn-sm">删除</button>
+                </form>
+            </div>
+        </li>
+        {% endfor %}
+    </ul>
+
+    {% if pagination.pages > 1 %}
+    <nav aria-label="Page navigation" class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% for page_num in pagination.iter_pages() %}
+            <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
+                <a class="page-link" href="{{ url_for('manage_blogs', page=page_num) }}">{{ page_num }}</a>
+            </li>
+            {% endfor %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+
+{% endblock %}

@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <!-- 设置字符编码为UTF-8 -->
+    <meta charset="UTF-8">
+    <!-- 页面标题 -->
+    <title>管理试卷</title>
+    <!-- 引入Bootstrap CSS样式库 -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/5.2.3/bootstrap.min.css') }}">
+</head>
+
+<body>
+    <!-- 继承头部模板 -->
+    {% extends 'header.html' %}
+    {% block content %}
+    <div class="container">
+        <!-- 页面标题 -->
+        <h1 class="text-center">管理试卷</h1>
+        <!-- 管理试卷表单 -->
+        <form id="manageExamForm">
+            <!-- 试卷名称输入框 -->
+            <div class="mb-3">
+                <label for="name" class="form-label">试卷名称</label>
+                <input type="text" class="form-control" id="name" value="{{ exam.name }}">
+            </div>
+            <!-- 题目ID列表输入框 -->
+            <div class="mb-3">
+                <label for="question_ids" class="form-label">题目ID列表（用逗号分隔）</label>
+                <input type="text" class="form-control" id="question_ids" value="{{ exam.question_ids }}">
+            </div>
+            <!-- 考试时长输入框 -->
+            <div class="mb-3">
+                <label for="duration" class="form-label">考试时长（分钟）</label>
+                <input type="number" class="form-control" id="duration" value="{{ exam.duration }}">
+            </div>
+            <!-- 选取题目数量输入框 -->
+            <div class="mb-3">
+                <label for="num_questions" class="form-label">选取题目数量</label>
+                <input type="number" class="form-control" id="num_questions" value="{{ exam.num_questions }}">
+            </div>
+            <!-- 每道题的分数输入框 -->
+            <div class="mb-3">
+                <label for="score_per_question" class="form-label">每道题的分数</label>
+                <input type="number" class="form-control" id="score_per_question" value="{{ exam.score_per_question }}">
+            </div>
+            <!-- 班级选择复选框 -->
+            <div class="mb-3">
+                <label for="classes" class="form-label">班级</label>
+                <div id="classes">
+                    <!-- 动态加载班级复选框 -->
+                </div>
+            </div>
+            <!-- 保存修改按钮 -->
+            <button type="button" class="btn btn-primary" onclick="updateExam()">保存修改</button>
+        </form>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            loadClasses();
+
+            // 加载班级信息
+            function loadClasses() {
+                fetch('/classes')
+                    .then(response => response.json())
+                    .then(data => {
+                        const classContainer = document.getElementById('classes');
+                        classContainer.innerHTML = '';
+                        data.forEach(classItem => {
+                            const checkboxDiv = document.createElement('div');
+                            checkboxDiv.className = 'form-check';
+                            const input = document.createElement('input');
+                            input.className = 'form-check-input';
+                            input.type = 'checkbox';
+                            input.id = 'class_' + classItem.id;
+                            input.value = classItem.id;
+                            const label = document.createElement('label');
+                            label.className = 'form-check-label';
+                            label.htmlFor = input.id;
+                            label.innerText = classItem.name;
+                            checkboxDiv.appendChild(input);
+                            checkboxDiv.appendChild(label);
+                            classContainer.appendChild(checkboxDiv);
+                        });
+                        setSelectedClasses();
+                    })
+                    .catch(error => console.error('Error fetching classes:', error));
+            }
+
+            // 设置已选择的班级
+            function setSelectedClasses() {
+                const url = '/api/exam' + window.location.pathname.split('/manage_exam')[1];
+                fetch(url)
+                    .then(response => response.json())
+                    .then(exam => {
+                        const selectedClasses = exam.classes;
+                        selectedClasses.forEach(classId => {
+                            const checkbox = document.getElementById('class_' + classId);
+                            if (checkbox) {
+                                checkbox.checked = true;
+                            } else {
+                                console.log("Checkbox not found for class ID:", classId);
+                            }
+                        });
+                    })
+                    .catch(error => console.error("Error fetching exam data:", error));
+            }
+        });
+
+        // 更新试卷信息
+        function updateExam() {
+            const selectedClasses = Array.from(document.querySelectorAll('#classes input:checked')).map(checkbox => checkbox.value);
+
+            // 获取并验证输入框的值
+            const name = document.getElementById('name').value.trim();
+            const questionIds = document.getElementById('question_ids').value.trim();
+            const duration = document.getElementById('duration').value.trim();
+            const numQuestions = document.getElementById('num_questions').value.trim();
+            const scorePerQuestion = document.getElementById('score_per_question').value.trim();
+
+            // 验证必填项
+            if (!name || !questionIds || !duration || !numQuestions || !scorePerQuestion || selectedClasses.length === 0) {
+                alert("请填写所有必填项并选择至少一个班级");
+                return;
+            }
+
+            // 构造数据对象
+            const data = {
+                name: name,
+                question_ids: questionIds.split(',').map(id => id.trim()),
+                duration: parseInt(duration),
+                num_questions: parseInt(numQuestions),
+                score_per_question: parseInt(scorePerQuestion),
+                classes: selectedClasses
+            };
+
+            // 通过 Fetch API 发送更新请求
+            fetch(window.location.pathname, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                })
+                .then(response => response.json())
+                .then(response => alert(response.message))
+                .catch(error => alert('更新失败: ' + error));
+        }
+    </script>
+    <!-- 引入Bootstrap JS -->
+    <script src="{{ url_for('static', filename='js/5.2.3/bootstrap.bundle.min.js') }}"></script>
+    {% endblock %}
+</body>
+
+</html>

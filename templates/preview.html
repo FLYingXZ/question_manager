@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Document Preview</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        iframe {
+            width: 80%;
+            height: 80%;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+
+<body>
+    {% if filename.endswith('.pptx') or filename.endswith('.docx') %}
+    <iframe src="https://view.officeapps.live.com/op/embed.aspx?src={{ file_url }}" frameborder="0"></iframe>
+    {% else %}
+    <p>Unsupported file format for preview.</p>
+    {% endif %}
+</body>
+
+</html>

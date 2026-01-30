@@ -1,0 +1,356 @@
+{% extends 'header.html' %}
+{% block content %}
+
+<head>
+    <link rel="stylesheet" href="{{ url_for('static', filename='markdown-viewer/index.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='markdown-viewer/libs/editormd.min.css') }}">
+    <script src="{{ url_for('static', filename='markdown-viewer/libs/jquery-2.2.1.js') }}"></script>
+    <script src="{{ url_for('static', filename='markdown-viewer/libs/marked.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='markdown-viewer/libs/prettify.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='markdown-viewer/libs/raphael.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='markdown-viewer/libs/underscore.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='markdown-viewer/libs/sequence-diagram.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='markdown-viewer/libs/flowchart.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='markdown-viewer/libs/jquery.flowchart.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='markdown-viewer/libs/editormd.min.js') }}"></script>
+
+    <style>
+        /* 整体布局区域 */
+        .learning-layout {
+            display: flex;
+            flex-direction: column;
+            padding: 20px 24px 24px;
+        }
+      /* 让这页的主容器占满宽高，去掉圆角和阴影 */
+      .ui.main.container {
+          padding: 0 !important;
+          max-width: 100% !important;
+          width: 100% !important;
+          border-radius: 0 !important;
+          box-shadow: none !important;
+          background: #f5f7fa !important;
+      }
+        /* 顶部信息条 */
+        .learning-header-card {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: linear-gradient(135deg, #ecf4ff, #f7fafc);
+            border-radius: 10px;
+            padding: 14px 18px;
+            margin-bottom: 18px;
+            border: 1px solid #e0e6f0;
+        }
+
+        .learning-header-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .learning-logo {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            object-fit: cover;
+            box-shadow: 0 0 0 2px #d6e4ff;
+        }
+
+        .learning-title {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .learning-title-main {
+            font-size: 20px;
+            font-weight: 600;
+            font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+            color: #2c3e50;
+        }
+
+        .learning-title-sub {
+            font-size: 12px;
+            color: #7f8c8d;
+        }
+
+        .btn-primary-outline {
+            padding: 8px 18px;
+            background: #3498db;
+            color: #fff;
+            border: none;
+            border-radius: 18px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 6px rgba(52, 152, 219, .25);
+        }
+
+        .btn-primary-outline:hover {
+            background: #2980b9;
+            color: #fff;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(52, 152, 219, .35);
+        }
+
+        /* 主体两栏布局 */
+        .learning-main {
+            display: grid;
+            grid-template-columns: 260px minmax(0, 1fr);
+            gap: 16px;
+            min-height: 540px;
+        }
+
+        /* 侧边栏样式 */
+        #sidebar_js {
+            background: #f8fafc;
+            border-radius: 8px;
+            border: 1px solid #e0e6f0;
+            padding: 10px 0;
+            overflow-y: auto;
+            max-height: calc(100vh - 140px);
+            font-size: 14px;
+        }
+
+        #sidebar_js ul {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        #sidebar_js li {
+            transition: background-color 0.15s ease, color 0.15s ease, padding-left 0.15s ease;
+        }
+
+        #sidebar_js li p {
+            margin: 0;
+            padding: 6px 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+        }
+
+        #sidebar_js li a {
+            color: #34495e;
+            text-decoration: none;
+            flex: 1;
+            display: block;
+        }
+
+        #sidebar_js li a:hover {
+            color: #3498db;
+        }
+
+        #sidebar_js .current-selected > p,
+        #sidebar_js .elem-active > p {
+            background-color: #eaf4ff;
+            border-left: 3px solid #3498db;
+        }
+
+        #sidebar_js .current-selected a,
+        #sidebar_js .elem-active a {
+            color: #2980b9;
+            font-weight: 500;
+        }
+
+        /* 层级缩进 */
+        .common-level-0 p { padding-left: 14px; }
+        .common-level-1 p { padding-left: 22px; }
+        .common-level-2 p { padding-left: 30px; }
+        .common-level-3 p { padding-left: 38px; }
+
+        /* 展开/收起图标 */
+        .ico_up::before,
+        .ico_down::before {
+            content: "";
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            margin-right: 8px;
+            border-radius: 2px;
+            border: 2px solid #bdc3c7;
+            border-top-color: transparent;
+            border-right-color: transparent;
+            transform: rotate(-45deg);
+            transition: transform 0.15s ease, border-color 0.15s ease;
+        }
+
+        .ico_up::before {
+            transform: rotate(135deg);
+            border-color: #3498db;
+            border-bottom-color: transparent;
+            border-left-color: transparent;
+        }
+
+        .ico_down::before {
+            border-color: #95a5a6;
+        }
+
+        .unchild-span {
+            display: inline-block;
+            width: 10px;
+            margin-right: 8px;
+        }
+
+        /* 右侧正文区 */
+        .learning-article-wrapper {
+            background: #ffffff;
+            border-radius: 8px;
+            border: 1px solid #e0e6f0;
+            padding: 18px 22px 22px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* 编辑按钮 */
+        .edit-btn {
+            position: absolute;
+            top: 12px;
+            right: 16px;
+            padding: 6px 14px;
+            font-size: 13px;
+            background: #27ae60;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .edit-btn:hover {
+            background: #219150;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 6px rgba(39, 174, 96, 0.4);
+        }
+
+        /* 编辑模式下的按钮组 */
+        #editor-buttons {
+            display: none;
+            margin-top: 10px;
+            text-align: right;
+            gap: 8px;
+        }
+
+        .save-btn,
+        .cancel-btn {
+            padding: 6px 14px;
+            font-size: 13px;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            transition: all .15s ease;
+        }
+
+        .save-btn {
+            background: #3498db;
+            color: #fff;
+        }
+
+        .save-btn:hover {
+            background: #2980b9;
+            transform: translateY(-1px);
+        }
+
+        .cancel-btn {
+            background: #ecf0f1;
+            color: #7f8c8d;
+            margin-right: 4px;
+        }
+
+        .cancel-btn:hover {
+            background: #dde4ea;
+            color: #636e72;
+        }
+
+        /* markdown 正文容器 */
+        #article-container-js {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        /* 编辑器容器 */
+        #editor-container {
+            display: none;
+            max-width: 100%;
+        }
+
+        /* 响应式 */
+        @media (max-width: 992px) {
+            .learning-main {
+                grid-template-columns: 210px minmax(0, 1fr);
+            }
+            #article-container-js {
+                max-width: 100%;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .learning-main {
+                grid-template-columns: 1fr;
+            }
+            #sidebar_js {
+                max-height: 260px;
+            }
+            .edit-btn {
+                position: static;
+                margin-bottom: 6px;
+                float: right;
+            }
+        }
+    </style>
+</head>
+
+<div class="learning-layout">
+
+    <!-- 顶部头部区域 -->
+    <div class="learning-header-card">
+        <div class="learning-header-left">
+            <a href="/learning_markdown" style="display: flex; align-items: center; text-decoration: none;">
+                <img src="https://q1.qlogo.cn/g?b=qq&nk=407260998&s=100"
+                     alt="Logo"
+                     class="learning-logo">
+                <div class="learning-title">
+                    <span class="learning-title-main">Python Room</span>
+                    <span class="learning-title-sub">Markdown 学习中心 · 支持流程图 / 时序图 / 公式</span>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <!-- 主体 两栏布局 -->
+    <div class="learning-main">
+        <!-- 侧边栏 -->
+        <aside id="sidebar_js"></aside>
+
+        <!-- 正文 + 编辑区 -->
+        <section class="learning-article-wrapper">
+            {% if user.role == 'admin' %}
+                <button id="edit-button" class="edit-btn">编辑</button>
+            {% else %}
+                <div id="edit-button"></div>
+            {% endif %}
+
+            <!-- 预览区域 -->
+            <div class="markdown-body editormd-preview-container"
+                 id="article-container-js">
+            </div>
+
+            <!-- 编辑器容器 -->
+            <div id="editor-container">
+                <textarea id="markdown-editor"></textarea>
+            </div>
+
+            <!-- 按钮组 -->
+            <div id="editor-buttons">
+                <button id="cancel-edit" class="cancel-btn">取消</button>
+                <button id="save-markdown" class="save-btn">保存</button>
+            </div>
+        </section>
+    </div>
+</div>
+
+<div class="hidden" id="editormd-js"></div>
+
+<script src="{{ url_for('static', filename='markdown-viewer/router.js') }}"></script>
+<script src="{{ url_for('static', filename='markdown-viewer/sidebar.js') }}"></script>
+
+{% endblock %}

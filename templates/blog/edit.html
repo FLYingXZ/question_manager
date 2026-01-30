@@ -1,0 +1,194 @@
+{% extends "header.html" %}
+{% block content %}
+
+<head>
+    <meta charset="UTF-8">
+    <title>博客编辑</title>
+
+    <!-- EasyMDE -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/easymde.min.css') }}">
+    <script src="{{ url_for('static', filename='js/easymde.min.js') }}"></script>
+
+    <!-- MathJax 配置 -->
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']]
+            },
+            svg: {
+                fontCache: 'global'
+            }
+        };
+    </script>
+    <script src="{{ url_for('static', filename='js/tex-mml-chtml.js') }}"></script>
+
+    <!-- 复用与 new.html 相同的样式 -->
+    <style>
+        .blog-editor-wrapper {
+            padding: 30px 40px 40px;
+            background: #f5f7fa;
+        }
+        .blog-editor-card {
+            background: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
+            padding: 25px 28px 28px;
+        }
+        .blog-editor-title {
+            font-size: 24px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+        }
+        .blog-editor-title::before {
+            content: "";
+            width: 4px;
+            height: 22px;
+            background: #3498db;
+            border-radius: 2px;
+            margin-right: 10px;
+        }
+        .blog-editor-card .form-label {
+            font-weight: 500;
+            color: #34495e;
+        }
+        .blog-editor-card .form-control {
+            border-radius: 6px;
+            border-color: #dce1e6;
+            box-shadow: none;
+        }
+        .blog-editor-card .form-control:focus {
+            border-color: #3498db;
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.15);
+        }
+        .form-check.form-switch .form-check-input {
+            width: 2.5em;
+            height: 1.3em;
+        }
+        .form-check-label {
+            color: #34495e;
+            margin-left: 4px;
+        }
+        .editor-actions {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+        }
+        .editor-actions .btn-primary {
+            background-color: #3498db;
+            border-color: #3498db;
+            border-radius: 6px;
+            font-weight: 500;
+            padding: 6px 16px;
+        }
+        .editor-actions .btn-primary:hover {
+            background-color: #2980b9;
+            border-color: #2980b9;
+        }
+        .EasyMDEContainer {
+            border-radius: 6px;
+            border: 1px solid #dce1e6;
+            overflow: hidden;
+        }
+        .editor-toolbar {
+            background: #f8f9fb;
+            border-bottom: 1px solid #dce1e6 !important;
+        }
+        .editor-toolbar button {
+            color: #34495e !important;
+        }
+        .editor-toolbar button:hover {
+            background: #ecf0f1 !important;
+        }
+        .CodeMirror, .editor-preview {
+            min-height: 320px;
+            font-size: 0.95rem;
+        }
+        .CodeMirror {
+            background: #fbfcfe;
+        }
+        .editor-preview {
+            padding: 16px !important;
+        }
+        @media (max-width: 768px) {
+            .blog-editor-wrapper {
+                padding: 20px 15px 25px;
+            }
+            .blog-editor-card {
+                padding: 18px 15px 22px;
+            }
+        }
+    </style>
+</head>
+
+<div class="blog-editor-wrapper">
+    <div class="blog-editor-card">
+        <div class="blog-editor-title">编辑博客</div>
+
+        <form method="post">
+            <div class="row g-3">
+                <div class="col-12">
+                    <label for="title" class="form-label">标题</label>
+                    <input type="text" class="form-control" id="title" name="title"
+                           value="{{ blog.title }}" required>
+                </div>
+
+                <div class="col-md-6">
+                    <label for="category" class="form-label">分类</label>
+                    <input type="text" class="form-control" id="category" name="category"
+                           value="{{ blog.category }}">
+                </div>
+
+                <div class="col-md-6">
+                    <label for="tags" class="form-label">标签</label>
+                    <input type="text" class="form-control" id="tags" name="tags"
+                           value="{{ blog.tags }}">
+                    <div class="form-text">多个标签用逗号分隔。</div>
+                </div>
+
+                <div class="col-12">
+                    <label for="mdcontent" class="form-label">内容</label>
+                    <textarea id="mdcontent" name="content">{{ blog.content }}</textarea>
+                    <div class="form-text mt-1">
+                        支持 Markdown 与 LaTeX 公式，左侧编辑，右侧预览。
+                    </div>
+                </div>
+
+                <div class="col-md-6 mt-2">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="is_public" name="is_public"
+                               {% if blog.is_public %}checked{% endif %}>
+                        <label class="form-check-label" for="is_public">公开此博客</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="editor-actions">
+                <button type="submit" class="btn btn-primary">保存</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    // 初始化 EasyMDE
+    var easyMDE = new EasyMDE({
+        element: document.getElementById('mdcontent'),
+        autofocus: true,
+        autoDownloadFontAwesome: false,
+        showIcons: ["code", "bold", "italic", "link", "quote"],
+        spellChecker: false,
+        previewRender: function(plainText) {
+            var preview = this.parent.markdown(plainText); // 渲染 Markdown
+            setTimeout(function() {
+                MathJax.typesetPromise(); // 触发 MathJax 渲染
+            }, 0);
+            return preview;
+        }
+    });
+</script>
+
+{% endblock %}

@@ -1,0 +1,66 @@
+{% extends 'header.html' %}
+{% block content %}
+<head>
+    <meta charset="UTF-8">
+    <title>Route Logs</title>
+    <style>
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 8px; text-align: left; border: 1px solid #ddd; }
+        .pagination { margin: 20px 0; display: flex; justify-content: center; }
+        .pagination a { margin: 0 5px; padding: 8px 12px; text-decoration: none; border: 1px solid #ddd; }
+        .pagination a.active { background-color: #4CAF50; color: white; }
+    </style>
+</head>
+<body>
+    <div class="new-container">
+        <h1>操作记录</h1>
+        <table>
+            <thead>
+                <tr>
+                    <th>User ID</th>
+                    <th>User name</th>
+                    <th>IP Address</th>
+                    <th>Access Time</th>
+                    <th>Page</th>
+                    <th>Location</th>
+                    <th>Extra Info</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in logs.items %}
+                <tr>
+                    <td>{{ log.user_id }}</td>
+                    <td>{{ log.user_name }}</td>
+                    <td>{{ log.ip_address }}</td>
+                    <td>{{ log.access_time }}</td>
+                    <td>{{ log.page }}</td>
+                    <td>{{ log.location }}</td>
+                    <td>{{ log.extra_info }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <div>
+            <div class="pagination">
+                {% if logs.has_prev %}
+                    <a href="{{ url_for('logs', page=logs.prev_num) }}">Previous</a>
+                {% endif %}
+                {% for page_num in logs.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                    {% if page_num %}
+                        {% if page_num == logs.page %}
+                            <a href="{{ url_for('logs', page=page_num) }}" class="active">{{ page_num }}</a>
+                        {% else %}
+                            <a href="{{ url_for('logs', page=page_num) }}">{{ page_num }}</a>
+                        {% endif %}
+                    {% else %}
+                        <span>...</span>
+                    {% endif %}
+                {% endfor %}
+                {% if logs.has_next %}
+                    <a href="{{ url_for('logs', page=logs.next_num) }}">Next</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</body>
+{% endblock %}

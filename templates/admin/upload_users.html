@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>上传用户</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/5.11.2/all.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/5.2.3/bootstrap.min.css') }}">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+
+        .container {
+            max-width: 600px;
+            margin-top: 50px;
+            padding: 30px;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .btn-primary {
+            width: 100%;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    {% extends 'header.html' %}
+    {% block content %}
+    <div class="container">
+        <h1>上传用户</h1>
+        <form action="/upload_users" method="post" enctype="multipart/form-data" class="form-group">
+            <input type="file" name="file" required>
+            <input type="submit" value="上传">
+        </form>
+        <a href="/static/model_user_upload.xlsx" class="download-button">模板下载</a>
+    </div>
+    {% endblock %}
+</body>
+
+</html>

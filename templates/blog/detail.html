@@ -1,0 +1,230 @@
+{% extends "header.html" %}
+{% block content %}
+
+<!-- 仅在子模板里写局部样式和必要 JS，不再写 <head><body> -->
+<link rel="stylesheet" href="{{ url_for('static', filename='markdown-viewer/index.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='markdown-viewer/libs/editormd.min.css') }}">
+
+<script src="{{ url_for('static', filename='markdown-viewer/libs/jquery-2.2.1.js') }}"></script>
+<script src="{{ url_for('static', filename='markdown-viewer/libs/marked.min.js') }}"></script>
+<script src="{{ url_for('static', filename='markdown-viewer/libs/prettify.min.js') }}"></script>
+<script src="{{ url_for('static', filename='markdown-viewer/libs/raphael.min.js') }}"></script>
+<script src="{{ url_for('static', filename='markdown-viewer/libs/underscore.min.js') }}"></script>
+<script src="{{ url_for('static', filename='markdown-viewer/libs/sequence-diagram.min.js') }}"></script>
+<script src="{{ url_for('static', filename='markdown-viewer/libs/flowchart.min.js') }}"></script>
+<script src="{{ url_for('static', filename='markdown-viewer/libs/jquery.flowchart.min.js') }}"></script>
+<script src="{{ url_for('static', filename='markdown-viewer/libs/editormd.min.js') }}"></script>
+
+<script>
+  MathJax = {
+    tex: { inlineMath: [['$', '$']] },
+    startup: { typeset: false }
+  };
+</script>
+<script src="{{ url_for('static', filename='js/tex-svg.js') }}"></script>
+
+<style>
+  .blog-detail-wrapper {
+    padding: 24px 28px 32px;
+    background: #f8fafc;
+  }
+
+  .blog-detail-card {
+    max-width: 1100px;
+    margin: 0 auto;
+    background: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
+    border: 1px solid #e5e9f2;
+    padding: 24px 26px 20px;
+  }
+
+  .blog-detail-title {
+    font-size: 26px;
+    font-weight: 700;
+    color: #1f2933;
+    margin-bottom: 8px;
+  }
+
+  .blog-detail-meta {
+    font-size: 13px;
+    color: #6b7280;
+  }
+
+  .blog-detail-meta span {
+    margin-right: 18px;
+  }
+
+  .blog-detail-meta i {
+    margin-right: 4px;
+    color: #3498db;
+  }
+
+  .blog-tag-badge {
+    display: inline-block;
+    border-radius: 999px;
+    background: rgba(52, 152, 219, 0.12);
+    color: #1d4ed8;
+    padding: 4px 10px;
+    font-size: 12px;
+    margin-right: 6px;
+    margin-bottom: 4px;
+  }
+
+  .blog-detail-divider {
+    border-top: 1px solid #e5e7eb;
+    margin: 18px 0 14px;
+  }
+
+  .blog-content {
+    font-size: 15px;
+    color: #374151;
+    line-height: 1.75;
+  }
+
+  #editormd-view {
+    padding-top: 4px;
+  }
+
+  .blog-footer {
+    border-top: 1px solid #e5e7eb;
+    margin-top: 22px;
+    padding-top: 12px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 13px;
+    color: #6b7280;
+  }
+
+  .blog-stats span {
+    margin-right: 16px;
+  }
+
+  .btn-like {
+    background: #3498db;
+    border: none;
+    border-radius: 999px;
+    padding: 6px 16px;
+    font-size: 14px;
+    color: #fff;
+    display: inline-flex;
+    align-items: center;
+    transition: all 0.15s ease;
+  }
+
+  .btn-like i {
+    margin-right: 6px;
+  }
+
+  .btn-like:hover {
+    background: #2980b9;
+    transform: translateY(-1px);
+  }
+
+  .btn-like:active {
+    transform: translateY(0);
+  }
+
+  @media (max-width: 768px) {
+    .blog-detail-wrapper {
+      padding: 16px 12px 24px;
+    }
+
+    .blog-detail-card {
+      padding: 18px 16px 16px;
+    }
+
+    .blog-detail-title {
+      font-size: 22px;
+    }
+  }
+</style>
+
+<div class="blog-detail-wrapper">
+  <div class="blog-detail-card">
+    <!-- 头部 -->
+    <div class="blog-header">
+      <div class="d-flex justify-content-between align-items-start flex-wrap">
+        <h1 class="blog-detail-title mb-1">{{ blog.title }}</h1>
+        {% if current_user.is_authenticated and (current_user.id == blog.author_id or user_role in ['admin','teacher']) %}
+        <div class="mt-1">
+          <a href="{{ url_for('edit_blog', blog_id=blog.id) }}"
+             class="btn btn-sm btn-outline-primary">
+            <i class="fa fa-edit me-1"></i> 编辑
+          </a>
+        </div>
+        {% endif %}
+      </div>
+
+      <div class="blog-detail-meta mt-2">
+        <span><i class="fa-regular fa-user"></i> {{ blog.author.username }}</span>
+        <span><i class="fa-regular fa-clock"></i> {{ blog.create_time }}</span>
+        <span><i class="fa fa-folder-open"></i> {{ blog.category or '未分类' }}</span>
+      </div>
+
+      {% if blog.tags %}
+      <div class="mt-2">
+        {% for tag in blog.tags.split(",") %}
+        <span class="blog-tag-badge">{{ tag.strip() }}</span>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="blog-detail-divider"></div>
+
+    <!-- 内容 -->
+    <div class="blog-content">
+      <div id="editormd-view">
+        <textarea style="display:none;">{{ blog.content }}</textarea>
+      </div>
+    </div>
+
+    <!-- 底部信息 -->
+    <div class="blog-footer">
+      <div class="blog-stats mb-2 mb-md-0">
+        <span><i class="fa fa-eye"></i> 阅读 {{ blog.view_count }}</span>
+        <span><i class="fa fa-thumbs-up"></i> 点赞 {{ blog.like_count }}</span>
+        {% if not blog.is_public %}
+        <span class="badge bg-secondary">私有</span>
+        {% endif %}
+      </div>
+      <div>
+        <button type="button" id="like-button" class="btn-like">
+          <i class="fa fa-thumbs-up"></i> 点赞
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  $(function () {
+    editormd.markdownToHTML("editormd-view", {
+      htmlDecode: "style,script,iframe",
+      emoji: true,
+      tex: true
+    });
+
+    setTimeout(function () {
+      if (window.MathJax) {
+        MathJax.typesetPromise().catch(function (err) {
+          console.error("MathJax 渲染失败", err);
+        });
+      }
+    }, 500);
+
+    $('#like-button').click(function () {
+      $.post('/blog/like/{{ blog.id }}', function (response) {
+        alert(response.message);
+        location.reload();
+      }).fail(function () {
+        alert('点赞失败，请稍后重试。');
+      });
+    });
+  });
+</script>
+
+{% endblock %}

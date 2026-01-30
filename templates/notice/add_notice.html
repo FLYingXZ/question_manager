@@ -1,0 +1,97 @@
+{% extends "header.html" %}
+{% block title %}添加公告{% endblock %}
+
+{% block content %}
+<!-- 引入Summernote JS 提供html控件 -->
+<script src="{{ url_for('static', filename='js/summernote-bs5.min.js') }}"></script>
+<!-- 引入Summernote CSS -->
+<link href="{{ url_for('static', filename='css/summernote-bs5.min.css') }}" rel="stylesheet">
+<div class="container mt-5">
+    <h1 class="mb-4">添加公告</h1>
+    <form action="{{ url_for('add_notice_page') }}" method="post">
+        <div class="mb-3">
+            <label for="title" class="form-label">标题</label>
+            <input type="text" class="form-control" name="title" id="title" required>
+        </div>
+        <div class="mb-3">
+            <label for="content" class="form-label">内容</label>
+            <textarea class="form-control" name="content" id="content" rows="20" required></textarea>
+        </div>
+        <button type="submit" class="btn btn-success">
+            <i class="bi bi-check-circle"></i> 添加公告
+        </button>
+        <a href="{{ url_for('notice_page') }}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> 返回首页
+        </a>
+    </form>
+</div>
+<script>
+$(document).ready(function() {
+    // 创建一个函数，用于初始化 Summernote 编辑器
+    function initializeSummernote(selector) {
+        $(selector).summernote({
+            tabDisable: true,
+            fontNames: ['宋体', 'Times New Roman', '黑体', '仿宋', '楷体', '微软雅黑'],
+            fontNamesIgnoreCheck: ['楷体'],
+            toolbar: [
+                ['style', ['style']],
+                ['font', ['bold', 'italic', 'underline', 'clear', 'borderedText']],
+                ['fontname', ['fontname']],
+                ['color', ['color']],
+                ['para', ['ul', 'ol', 'paragraph']],
+                ['height', ['height']],
+                ['table', ['table']],
+                ['insert', ['link', 'picture', 'video']],
+                ['view', ['fullscreen', 'codeview', 'help']]
+            ],
+            buttons: {
+                borderedText: function(context) {
+                    var ui = $.summernote.ui;
+                    return ui.button({
+                        contents: '▣',
+                        tooltip: '字体边框',
+                        click: function() {
+                            var selectedText = window.getSelection().toString();
+                            if (selectedText) {
+                                context.invoke('editor.pasteHTML', '<span style="border:solid windowtext 1.0pt">' + selectedText + '</span>');
+                            } else {
+                                alert("请先选择要应用边框的文本");
+                            }
+                        }
+                    }).render();
+                }
+            },
+            callbacks: {
+                onImageUpload: function(files) {
+                    var data = new FormData();
+                    data.append('file', files[0]);
+                    $.ajax({
+                        url: '/upload_image', // 你的图片上传接口
+                        method: 'POST',
+                        data: data,
+                        processData: false,
+                        contentType: false,
+                        success: function(response) {
+                            var imageUrl = response.url;
+                            if (imageUrl) {
+                                $(selector).summernote('insertImage', imageUrl);
+                            } else {
+                                console.error('URL 格式错误', response);
+                            }
+                        },
+                        error: function(err) {
+                            console.error('图片上传失败', err);
+                        }
+                    });
+                }
+            },
+            height: 300, // 设置编辑器高度
+            minHeight: null,
+            maxHeight: null,
+        });
+    }
+    // 为内容部分调用初始化函数
+    initializeSummernote('#content');
+});
+</script>
+{% endblock %}
